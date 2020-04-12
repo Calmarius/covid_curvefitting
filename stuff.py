@@ -3,6 +3,8 @@
 import numpy as np
 import datetime
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 with open('covid_data.txt') as f:
     content = f.readlines()
@@ -24,12 +26,17 @@ def logistic_model(x,a,b,c):
     return c/(1+np.exp(-(x-b)/a))
 
 # Fit logistic    
-fit = curve_fit(logistic_model, xData, yData, p0=[3, 70, 10000])
+fit = curve_fit(logistic_model, xData, yData, p0=[3, 70, 100000])
 errors = [np.sqrt(fit[1][i][i]) for i in [0,1,2]]
 peak_date = (baseDate + datetime.timedelta(days=fit[0][1]))
-print("Predicted peak based on logistic model: {} +- {:.2f} days".format(
-    peak_date.strftime('%Y-%m-%d'), errors[1]))
-print("Predicted max infections: {:.2f} +- {:.2f}".format(fit[0][2], errors[2]))
+peak_date_error = errors[1]
+peak_date_str = "Predicted peak based on logistic model: {} ± {:.2f} days".format(
+    peak_date.strftime('%Y-%m-%d'), peak_date_error)
+print(peak_date_str)
+max_inf = fit[0][2]
+max_inf_error = errors[2]
+max_inf_str = "Predicted max infections: {:.2f} ± {:.2f}".format(max_inf, max_inf_error)
+print(max_inf_str)
 
 # Fit exponential
 def exponential_model(x, a, b, c):
@@ -43,11 +50,36 @@ errors = [np.sqrt(expfit[1][i][i]) for i in [0,1,2]]
 days_to_simulate = 2*(peak_date - baseDate).days
 i = 0
 dayBase = xData[0]
+print("Date\tActual\tPredicted log\tPredicted exp")
+outDate = []
+outY = []
+outLog = []
+outExp = []
 while i < days_to_simulate:
     x = dayBase + i
-    print("{} {} Predicted: {}".format(
-        (baseDate + datetime.timedelta(days=x)).strftime('%Y-%m-%d'),
-        yData[i] if i < len(yData) else "",
-        logistic_model(x, fit[0][0], fit[0][1], fit[0][2])
+    newDate = (baseDate + datetime.timedelta(days=x))
+    # newDate = x
+    newY = yData[i] if i < len(yData) else float('nan')
+    newLog = logistic_model(x, fit[0][0], fit[0][1], fit[0][2])
+    newExp = exponential_model(x, expfit[0][0], expfit[0][1], expfit[0][2])
+    outDate.append(newDate)
+    outY.append(newY)
+    outLog.append(newLog)
+    outExp.append(newExp)
+    print("{}\t{}\t{}\t{}".format(
+        newDate, newY, newLog, newExp
         ))
     i = i + 1
+
+ax = plt.gca()
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+ax.xaxis.set_major_locator(mdates.MonthLocator())
+ax.xaxis.set_minor_locator(mdates.DayLocator())
+
+plt.plot(outDate, outY, 'ro', outDate, outLog, 'g-')
+plt.ylabel('cases')
+plt.xlabel('date')
+maxLog = max(outLog)
+plt.text(min(outDate), maxLog, max_inf_str + "\n" + peak_date_str)
+plt.axis([min(outDate), max(outDate), 0, maxLog])
+plt.show()
