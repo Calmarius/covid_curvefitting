@@ -29,7 +29,7 @@ def logistic_model(x, a, b, c):
 
 # Fit logistic
 fit = curve_fit(logistic_model, xData, yData, p0=[3, 70, 100000])
-errors = [np.sqrt(fit[1][i][i]) for i in [0, 1, 2]]
+errors = np.sqrt(np.diag(fit[1]))
 peak_date = (baseDate + datetime.timedelta(days=fit[0][1]))
 peak_date_error = errors[1]
 peak_date_str = "Predicted peak based on logistic model: {} ± {:.2f} days".format(
@@ -49,8 +49,12 @@ def exponential_model(x, b, c):
 
 
 expfit = curve_fit(exponential_model, xData, yData)
-print("Case growth per day: {:.2f}%".format(100*np.exp(expfit[0][0])-100))
-errors = [np.sqrt(expfit[1][i][i]) for i in [0, 1]]
+print("Raw growth: {}".format(expfit[0][0]))
+errors = np.sqrt(np.diag(expfit[1]))
+print("Raw error: {}".format(errors[0]))
+print("Exp error: {}".format(np.exp(errors[0])))
+
+print("Case growth per day: {:.2f}%".format(100*np.exp(expfit[0][0])-100 ))
 
 # Check match:
 days_to_simulate = 2*(peak_date - baseDate).days
