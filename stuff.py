@@ -17,17 +17,19 @@ baseDate = datetime.datetime(2020, 3, 1)
 for line in content:
     fields = line.split()
     date = (datetime.datetime.strptime(fields[0], '%Y-%m-%d')
-        - baseDate).days
+            - baseDate).days
     number = int(fields[1])
     xData.append(date)
     yData.append(number)
 
-def logistic_model(x,a,b,c):
+
+def logistic_model(x, a, b, c):
     return c/(1+np.exp(-(x-b)/a))
 
-# Fit logistic    
+
+# Fit logistic
 fit = curve_fit(logistic_model, xData, yData, p0=[3, 70, 100000])
-errors = [np.sqrt(fit[1][i][i]) for i in [0,1,2]]
+errors = [np.sqrt(fit[1][i][i]) for i in [0, 1, 2]]
 peak_date = (baseDate + datetime.timedelta(days=fit[0][1]))
 peak_date_error = errors[1]
 peak_date_str = "Predicted peak based on logistic model: {} ± {:.2f} days".format(
@@ -35,16 +37,20 @@ peak_date_str = "Predicted peak based on logistic model: {} ± {:.2f} days".form
 print(peak_date_str)
 max_inf = fit[0][2]
 max_inf_error = errors[2]
-max_inf_str = "Predicted max infections: {:.2f} ± {:.2f}".format(max_inf, max_inf_error)
+max_inf_str = "Predicted max infections: {:.2f} ± {:.2f}".format(
+    max_inf, max_inf_error)
 print(max_inf_str)
 
 # Fit exponential
+
+
 def exponential_model(x, a, b, c):
     return a*np.exp(b*(x-c))
 
+
 expfit = curve_fit(exponential_model, xData, yData)
 print("Case growth per day: {:.2f}%".format(100*np.exp(expfit[0][1])-100))
-errors = [np.sqrt(expfit[1][i][i]) for i in [0,1,2]]
+errors = [np.sqrt(expfit[1][i][i]) for i in [0, 1, 2]]
 
 # Check match:
 days_to_simulate = 2*(peak_date - baseDate).days
@@ -68,7 +74,7 @@ while i < days_to_simulate:
     outExp.append(newExp)
     print("{}\t{}\t{}\t{}".format(
         newDate, newY, newLog, newExp
-        ))
+    ))
     i = i + 1
 
 ax = plt.gca()
