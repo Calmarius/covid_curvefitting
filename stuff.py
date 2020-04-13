@@ -44,13 +44,13 @@ print(max_inf_str)
 # Fit exponential
 
 
-def exponential_model(x, a, b, c):
-    return a*np.exp(b*(x-c))
+def exponential_model(x, b, c):
+    return np.exp(b*(x-c))
 
 
 expfit = curve_fit(exponential_model, xData, yData)
-print("Case growth per day: {:.2f}%".format(100*np.exp(expfit[0][1])-100))
-errors = [np.sqrt(expfit[1][i][i]) for i in [0, 1, 2]]
+print("Case growth per day: {:.2f}%".format(100*np.exp(expfit[0][0])-100))
+errors = [np.sqrt(expfit[1][i][i]) for i in [0, 1]]
 
 # Check match:
 days_to_simulate = 2*(peak_date - baseDate).days
@@ -67,7 +67,7 @@ while i < days_to_simulate:
     # newDate = x
     newY = yData[i] if i < len(yData) else float('nan')
     newLog = logistic_model(x, fit[0][0], fit[0][1], fit[0][2])
-    newExp = exponential_model(x, expfit[0][0], expfit[0][1], expfit[0][2])
+    newExp = exponential_model(x, expfit[0][0], expfit[0][1])
     outDate.append(newDate)
     outY.append(newY)
     outLog.append(newLog)
