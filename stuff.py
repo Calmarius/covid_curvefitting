@@ -138,6 +138,7 @@ def main():
     axes.xaxis.set_major_locator(mdates.MonthLocator())
     axes.xaxis.set_minor_locator(mdates.DayLocator())
 
+    plt.figure(figsize=[10.24, 7.68])
     plt.plot(curve_data['date'], curve_data['y'],
              'ro', label='Jelentett esetek')
     plt.plot(curve_data['date'], curve_data['logistic'],
