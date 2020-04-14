@@ -113,7 +113,7 @@ def main():
         "{} ± {:.2f} days".format(
             log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
     print(peak_date_str)
-    max_inf_str = "Maximum: {:.2f} ± {:.2f}".format(
+    max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f}".format(
         log_result['max_inf'], log_result['max_inf_error'])
     print(max_inf_str)
 
@@ -138,9 +138,12 @@ def main():
     axes.xaxis.set_major_locator(mdates.MonthLocator())
     axes.xaxis.set_minor_locator(mdates.DayLocator())
 
-    plt.plot(curve_data['date'], curve_data['y'], 'ro', label='Jelentett esetek')
-    plt.plot(curve_data['date'], curve_data['logistic'], 'g-', label='Szigmoid modell')
-    plt.plot(curve_data['date'], curve_data['exponential'], 'b-', label='Exponenciális modell')
+    plt.plot(curve_data['date'], curve_data['y'],
+             'ro', label='Jelentett esetek')
+    plt.plot(curve_data['date'], curve_data['logistic'],
+             'g-', label='Szigmoid modell')
+    plt.plot(curve_data['date'], curve_data['exponential'],
+             'b-', label='Exponenciális modell')
     plt.ylabel('Esetek')
     plt.xlabel('Dátum')
     max_log = max(curve_data['logistic'])
