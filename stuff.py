@@ -28,7 +28,7 @@ def logistic_model(x, a, b, c):
 
 
 # Fit logistic
-fit = curve_fit(logistic_model, xData, yData, p0=[3, 70, 100000])
+fit = curve_fit(logistic_model, xData, yData, p0=[2, 50, 100000])
 errors = np.sqrt(np.diag(fit[1]))
 peak_date = (baseDate + datetime.timedelta(days=fit[0][1]))
 peak_date_error = errors[1]
