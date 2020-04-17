@@ -11,6 +11,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 BASE_DATE = datetime.datetime(2020, 3, 1)
+TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
 def parse_covid_data(filename):
@@ -124,6 +125,10 @@ def main():
         exp_result['daily_growth']*100-100)
     print(daily_growth_str)
 
+    still_exp_str = "Ha még mindig exponenciális a növekedés, "\
+        "holnap kb. {:.0f} új esetet kellene jelenteniük.".format(
+            (exp_result['daily_growth']-1)*y_data[-1])
+
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
 
     print("Date\tActual\tPredicted log\tPredicted exp")
@@ -150,10 +155,16 @@ def main():
     plt.ylabel('Esetek')
     plt.xlabel('Dátum')
     max_log = max(curve_data['logistic'])
-    plt.text(min(curve_data['date']), max_log, max_inf_str +
-             "\n" + peak_date_str + "\n" + daily_growth_str)
+    plt.tight_layout(rect=[0, 0.1, 1, 0.9])
+    plt.gcf().text(0.01, 0.01,
+                   max_inf_str + "\n" +
+                   peak_date_str + "\n" +
+                   daily_growth_str + "\n" +
+                   still_exp_str, va='bottom'
+                   )
     plt.axis([min(curve_data['date']), max(curve_data['date']), 0, max_log])
     plt.legend()
+    plt.title("COVID-19 görbeillesztés {}".format(TODAY))
     plt.savefig('plot.png')
 
 
