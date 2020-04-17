@@ -23,6 +23,8 @@ def parse_covid_data(filename):
 
     for line in content:
         fields = line.split()
+        if len(fields) < 2:
+            continue
         date = (datetime.datetime.strptime(fields[0], '%Y-%m-%d')
                 - BASE_DATE).days
         number = int(fields[1])
