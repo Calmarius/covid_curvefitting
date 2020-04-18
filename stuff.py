@@ -68,11 +68,16 @@ def exponential_model(day, ln_daily_growth, x_shift):
 def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
     expfit = curve_fit(exponential_model, x_data, y_data)
+    params = expfit[0]
+    errors = np.sqrt(np.diag(expfit[1]))
 
     return {
-        'ln_daily_growth': expfit[0][0],
-        'daily_growth': np.exp(expfit[0][0]),
-        'x_shift': expfit[0][1]
+        'ln_daily_growth': params[0],
+        'ln_daily_growth_error': errors[0],
+        'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
+        'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
+        'x_shift': params[1],
+        'x_shift_error': errors[1]
     }
 
 
@@ -113,7 +118,7 @@ def main():
 
     log_result = fit_logistic_model(x_data, y_data)
     peak_date_str = "Tetőzés a szigmoid modell alapján: " \
-        "{} ± {:.2f} days".format(
+        "{} ± {:.2f} nap".format(
             log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
     print(peak_date_str)
     max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f}".format(
@@ -121,8 +126,9 @@ def main():
     print(max_inf_str)
 
     exp_result = fit_exponential_model(x_data, y_data)
-    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}%".format(
-        exp_result['daily_growth']*100-100)
+    print(exp_result)
+    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%".format(
+        exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100)
     print(daily_growth_str)
 
     still_exp_str = "Ha még mindig exponenciális a növekedés, "\
