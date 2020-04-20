@@ -121,7 +121,7 @@ def main():
         "{} ± {:.2f} nap".format(
             log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
     print(peak_date_str)
-    max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f}".format(
+    max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f} eset".format(
         log_result['max_inf'], log_result['max_inf_error'])
     print(max_inf_str)
 
