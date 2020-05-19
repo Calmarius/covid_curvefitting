@@ -160,7 +160,7 @@ def main():
              'b-', label='Exponenciális modell')
     plt.ylabel('Esetek')
     plt.xlabel('Dátum')
-    max_log = max(curve_data['logistic'])
+    max_log = max(curve_data['logistic'] + y_data)
     plt.tight_layout(rect=[0, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
                    max_inf_str + "\n" +
