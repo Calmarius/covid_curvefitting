@@ -10,7 +10,7 @@ import matplotlib.dates as mdates
 import numpy as np
 from scipy.optimize import curve_fit
 
-BASE_DATE = datetime.datetime(2020, 3, 1)
+BASE_DATE = datetime.datetime(2020, 6, 18)
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
@@ -86,7 +86,7 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
     Creates the curves to be used when plotting data based
     on the calculated results.
     """
-    days_to_simulate = 2*(log_result['peak_date'] - BASE_DATE).days
+    days_to_simulate = max(2*(log_result['peak_date'] - BASE_DATE).days, x_data[-1] - x_data[0] + 1)
     i = 0
     day_base = x_data[0]
     out_date = []
