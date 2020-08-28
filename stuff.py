@@ -11,6 +11,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 BASE_DATE = datetime.datetime(2020, 6, 18)
+Y_BASE = 4078
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
@@ -37,12 +38,12 @@ def parse_covid_data(filename):
 
 def logistic_model(day, x_scale, peak, max_cases):
     "Logistic model formula"
-    return max_cases/(1+np.exp(-(day-peak)/x_scale))
+    return max_cases/(1+np.exp(-(day-peak)/x_scale)) + Y_BASE
 
 
 def fit_logistic_model(x_data, y_data):
     "Fits data into logistic curve"
-    fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 50, 100000])
+    fit = curve_fit(logistic_model, x_data, y_data, p0=[10, 30, 10000000])
     errors = np.sqrt(np.diag(fit[1]))
     peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
     peak_date_error = errors[1]
@@ -62,7 +63,7 @@ def fit_logistic_model(x_data, y_data):
 
 def exponential_model(day, ln_daily_growth, x_shift):
     "Exponential model formula"
-    return np.exp(ln_daily_growth*(day-x_shift))
+    return np.exp(ln_daily_growth*(day-x_shift)) + Y_BASE
 
 
 def fit_exponential_model(x_data, y_data):
@@ -122,7 +123,7 @@ def main():
             log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
     print(peak_date_str)
     max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f} eset".format(
-        log_result['max_inf'], log_result['max_inf_error'])
+        log_result['max_inf'] + Y_BASE, log_result['max_inf_error'])
     print(max_inf_str)
 
     exp_result = fit_exponential_model(x_data, y_data)
@@ -133,7 +134,7 @@ def main():
 
     still_exp_str = "Ha még mindig exponenciális a növekedés, "\
         "holnap kb. {:.0f} új esetet kellene jelenteniük.".format(
-            (exp_result['daily_growth']-1)*y_data[-1])
+            (exp_result['daily_growth']-1)*(y_data[-1]-Y_BASE))
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
 
@@ -168,7 +169,7 @@ def main():
                    daily_growth_str + "\n" +
                    still_exp_str, va='bottom'
                    )
-    plt.axis([min(curve_data['date']), max(curve_data['date']), 0, max_log])
+    plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_log])
     plt.legend()
     plt.title("COVID-19 görbeillesztés {}".format(TODAY))
     plt.savefig('plot.png')
