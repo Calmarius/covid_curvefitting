@@ -176,7 +176,7 @@ def main():
                  'g-', label='Szigmoid modell')
     plt.plot(curve_data['date'], curve_data['exponential'],
              'b-', label='Exponenciális modell')
-    plt.ylabel('Esetek')
+    plt.ylabel('Összes eset')
     plt.xlabel('Dátum')
     if log_result is None:
         max_y = 2*max(y_data)
