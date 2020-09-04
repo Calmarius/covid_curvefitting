@@ -149,7 +149,7 @@ def main():
     print("ln daily growth: {}, x_shift: {}".format(exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
     still_exp_str = "Ha még mindig exponenciális a növekedés, "\
-        "holnap kb. {:.0f} új esetet kellene jelenteniük.".format(
+        "holnap kb. {:.0f} új esetet kellene jelenteniük legalább.".format(
             (exp_result['daily_growth']-1)*(y_data[-1]-Y_BASE))
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
