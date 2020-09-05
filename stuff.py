@@ -10,8 +10,8 @@ import matplotlib.dates as mdates
 import numpy as np
 from scipy.optimize import curve_fit
 
-BASE_DATE = datetime.datetime(2020, 6, 18)
-Y_BASE = 4078
+BASE_DATE = datetime.datetime(2020, 8, 20)
+Y_BASE = 5046
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
