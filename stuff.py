@@ -5,6 +5,8 @@ Quickly written curve fitting script for covid data.
 """
 
 import datetime
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
@@ -42,8 +44,9 @@ def logistic_model(day, x_scale, peak, max_cases):
 
 
 def fit_logistic_model(x_data, y_data):
+    return None
     "Fits data into logistic curve"
-    fit = curve_fit(logistic_model, x_data, y_data, p0=[6, 300, 1000000])
+    fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 30, 1000000])
     errors = np.sqrt(np.diag(fit[1]))
     peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
     peak_date_error = errors[1]
