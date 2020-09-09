@@ -12,8 +12,8 @@ import matplotlib.dates as mdates
 import numpy as np
 from scipy.optimize import curve_fit
 
-BASE_DATE = datetime.datetime(2020, 8, 20)
-Y_BASE = 5046
+BASE_DATE = datetime.datetime(2020, 6, 18)
+Y_BASE = 4078
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
@@ -44,27 +44,32 @@ def logistic_model(day, x_scale, peak, max_cases):
 
 
 def fit_logistic_model(x_data, y_data):
-    return None
     "Fits data into logistic curve"
-    fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 30, 1000000])
-    errors = np.sqrt(np.diag(fit[1]))
-    peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
-    peak_date_error = errors[1]
-    max_inf = fit[0][2]
-    max_inf_error = errors[2]
+    try:
+        fit = curve_fit(logistic_model, x_data, y_data, p0=[10, 30, 100000])
+        errors = np.sqrt(np.diag(fit[1]))
+        peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
+        peak_date_error = errors[1]
+        max_inf = fit[0][2]
+        max_inf_error = errors[2]
 
-    if peak_date_error == float("inf") or max_inf_error == float("inf"):
+        if peak_date_error == float("inf") or max_inf_error == float("inf"):
+            print("No sigmoid fit due to infinite covariance.")
+            return None
+
+        return {
+            'peak': fit[0][1],
+            'peak_date': peak_date,
+            'peak_date_error': peak_date_error,
+            'max_inf': max_inf,
+            'max_inf_error': max_inf_error,
+            'x_scale': fit[0][0],
+            'x_scale_error': errors[0]
+        }
+    except RuntimeError:
+        print("No sigmoid fit due to exception.")
         return None
 
-    return {
-        'peak': fit[0][1],
-        'peak_date': peak_date,
-        'peak_date_error': peak_date_error,
-        'max_inf': max_inf,
-        'max_inf_error': max_inf_error,
-        'x_scale': fit[0][0],
-        'x_scale_error': errors[0]
-    }
 
 
 def exponential_model(day, ln_daily_growth, x_shift):
