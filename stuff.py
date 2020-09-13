@@ -46,7 +46,7 @@ def logistic_model(day, x_scale, peak, max_cases):
 def fit_logistic_model(x_data, y_data):
     "Fits data into logistic curve"
     try:
-        fit = curve_fit(logistic_model, x_data, y_data, p0=[10, 30, 100000])
+        fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000])
         errors = np.sqrt(np.diag(fit[1]))
         peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
         peak_date_error = errors[1]
@@ -190,7 +190,7 @@ def main():
         max_y = 2*max(y_data)
     else:
         max_y = max(curve_data['logistic'] + y_data)
-    plt.tight_layout(rect=[0, 0.1, 1, 0.9])
+    plt.tight_layout(rect=[0.05, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
                    max_inf_str + "\n" +
                    peak_date_str + "\n" +
@@ -199,6 +199,7 @@ def main():
                    )
     plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
     plt.legend()
+    plt.grid()
     plt.title("COVID-19 görbeillesztés {}".format(TODAY))
     plt.savefig('plot.png')
 
