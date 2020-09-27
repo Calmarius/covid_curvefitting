@@ -15,7 +15,7 @@ from scipy.optimize import curve_fit
 BASE_DATE = datetime.datetime(2020, 6, 18)
 Y_BASE = 4078
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
-
+LAST_DATE = ''
 
 def parse_covid_data(filename):
     "Loads the date from file into two lists separate x and y list"
@@ -24,11 +24,13 @@ def parse_covid_data(filename):
 
     x_data = []
     y_data = []
+    global LAST_DATE
 
     for line in content:
         fields = line.split()
         if len(fields) < 2:
             continue
+        LAST_DATE = fields[0]
         date = (datetime.datetime.strptime(fields[0], '%Y-%m-%d')
                 - BASE_DATE).days
         number = int(fields[1])
@@ -200,7 +202,7 @@ def main():
     plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
     plt.legend()
     plt.grid()
-    plt.title("COVID-19 görbeillesztés {}".format(TODAY))
+    plt.title("COVID-19 görbeillesztés {}".format(LAST_DATE))
     plt.savefig('plot.png')
 
 
