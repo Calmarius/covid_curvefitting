@@ -203,7 +203,7 @@ def main():
     plt.legend()
     plt.grid()
     plt.title("COVID-19 görbeillesztés {}".format(LAST_DATE))
-    plt.savefig('plot.png')
+    plt.savefig('plot-'+LAST_DATE+'.png')
 
 
 if __name__ == "__main__":
