@@ -153,7 +153,7 @@ def main():
         cases_axis_name = 'Összes halál'
         y_axis_name = 'Összes halott'
         element_marker = 'k+'
-        plot_file_suffix = 'deaths'
+        plot_file_suffix = '-deaths'
         plot_title = 'COVID-19 görbeillesztés - összes halott'
     else:
         file_name = 'covid_data.txt'
@@ -233,7 +233,7 @@ def main():
     plt.legend()
     plt.grid()
     plt.title("{} {}".format(plot_title, LAST_DATE))
-    file_name = 'plot-'+LAST_DATE+'-'+plot_file_suffix+'.png'
+    file_name = 'plot-'+LAST_DATE+plot_file_suffix+'.png'
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
