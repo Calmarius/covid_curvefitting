@@ -11,9 +11,11 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 from scipy.optimize import curve_fit
+import sys
 
-BASE_DATE = datetime.datetime(2020, 6, 18)
-Y_BASE = 4078
+BASE_DATE = ''
+Y_BASE = ''
+
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 LAST_DATE = ''
 
@@ -25,14 +27,17 @@ def parse_covid_data(filename):
     x_data = []
     y_data = []
     global LAST_DATE
+    global BASE_DATE
 
     for line in content:
         fields = line.split()
         if len(fields) < 2:
             continue
+        parsed_date = datetime.datetime.strptime(fields[0], '%Y-%m-%d')
+        if BASE_DATE == '':
+            BASE_DATE = parsed_date
         LAST_DATE = fields[0]
-        date = (datetime.datetime.strptime(fields[0], '%Y-%m-%d')
-                - BASE_DATE).days
+        date = (parsed_date - BASE_DATE).days
         number = int(fields[1])
         x_data.append(date)
         y_data.append(number)
@@ -135,15 +140,40 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
 def main():
     "Entry point"
 
-    x_data, y_data = parse_covid_data('covid_data.txt')
+    death_mode = False
+    global BASE_DATE
+    global Y_BASE
+
+    if len(sys.argv) > 1:
+        death_mode = sys.argv[1] == '--deaths'
+
+    if death_mode:
+        print("Death mode")
+        file_name = 'covid_deaths.txt'
+        cases_axis_name = 'Összes halál'
+        y_axis_name = 'Összes halott'
+        element_marker = 'k+'
+        plot_file_suffix = 'deaths'
+        plot_title = 'COVID-19 görbeillesztés - összes halott'
+    else:
+        file_name = 'covid_data.txt'
+        cases_axis_name = 'Jelentett esetek'
+        y_axis_name = 'Összes eset'
+        element_marker = 'ro'
+        plot_file_suffix = ''
+        plot_title = 'COVID-19 görbeillesztés - összes eset'
+
+
+    x_data, y_data = parse_covid_data(file_name)
+    Y_BASE = y_data[0]
 
     log_result = fit_logistic_model(x_data, y_data)
     if not log_result is None:
-        peak_date_str = "Tetőzés a szigmoid modell alapján: " \
+        peak_date_str = "Szigmoid inflekciós pont: " \
             "{} ± {:.2f} nap".format(
                 log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
         print(peak_date_str)
-        max_inf_str = "Maximum a szigmoid modell alapján: {:.2f} ± {:.2f} eset".format(
+        max_inf_str = "Szigmoid maximum: {:.2f} ± {:.2f} eset".format(
             log_result['max_inf'] + Y_BASE, log_result['max_inf_error'])
         print(max_inf_str)
     else:
@@ -159,7 +189,7 @@ def main():
     print("ln daily growth: {}, x_shift: {}".format(exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
     still_exp_str = "Ha még mindig exponenciális a növekedés, "\
-        "holnap kb. {:.0f} új esetet kellene jelenteniük legalább.".format(
+        "holnapi szám kb. {:.0f}".format(
             (exp_result['daily_growth']-1)*(y_data[-1]-Y_BASE))
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
@@ -180,13 +210,13 @@ def main():
 
     plt.figure(figsize=[10.24, 7.68])
     plt.plot(curve_data['date'], curve_data['y'],
-             'ro', label='Jelentett esetek')
+             element_marker, label=cases_axis_name)
     if not log_result is None:
         plt.plot(curve_data['date'], curve_data['logistic'],
                  'g-', label='Szigmoid modell')
     plt.plot(curve_data['date'], curve_data['exponential'],
              'b-', label='Exponenciális modell')
-    plt.ylabel('Összes eset')
+    plt.ylabel(y_axis_name)
     plt.xlabel('Dátum')
     if log_result is None:
         max_y = 2*max(y_data)
@@ -202,8 +232,10 @@ def main():
     plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
     plt.legend()
     plt.grid()
-    plt.title("COVID-19 görbeillesztés {}".format(LAST_DATE))
-    plt.savefig('plot-'+LAST_DATE+'.png')
+    plt.title("{} {}".format(plot_title, LAST_DATE))
+    file_name = 'plot-'+LAST_DATE+'-'+plot_file_suffix+'.png'
+    plt.savefig(file_name)
+    print("Plot saved to {}".format(file_name))
 
 
 if __name__ == "__main__":
