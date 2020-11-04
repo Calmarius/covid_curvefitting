@@ -12,6 +12,7 @@ import matplotlib.dates as mdates
 import numpy as np
 from scipy.optimize import curve_fit
 import sys
+import math
 
 BASE_DATE = ''
 Y_BASE = ''
@@ -183,12 +184,12 @@ def main():
 
     exp_result = fit_exponential_model(x_data, y_data)
     print(exp_result)
-    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%".format(
-        exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100)
+    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta)".format(
+        exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100, math.log(2)/math.log(exp_result['daily_growth']) )
     print(daily_growth_str)
     print("ln daily growth: {}, x_shift: {}".format(exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
-    still_exp_str = "Ha még mindig exponenciális a növekedés, "\
+    still_exp_str = "Ebben az ütemben való növekedés esetén a "\
         "holnapi szám kb. {:.0f}".format(
             (exp_result['daily_growth']-1)*(y_data[-1]-Y_BASE))
 
