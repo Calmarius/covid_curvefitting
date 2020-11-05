@@ -170,7 +170,7 @@ def main():
 
     log_result = fit_logistic_model(x_data, y_data)
     if not log_result is None:
-        peak_date_str = "Szigmoid inflekciós pont: " \
+        peak_date_str = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap".format(
                 log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
         print(peak_date_str)
