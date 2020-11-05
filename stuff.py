@@ -54,7 +54,9 @@ def logistic_model(day, x_scale, peak, max_cases):
 def fit_logistic_model(x_data, y_data):
     "Fits data into logistic curve"
     try:
-        fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000])
+        sigma = [1] * len(y_data)
+        # sigma[-1] = 0.1
+        fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000], sigma = sigma)
         errors = np.sqrt(np.diag(fit[1]))
         peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
         peak_date_error = errors[1]
@@ -69,13 +71,15 @@ def fit_logistic_model(x_data, y_data):
             'peak': fit[0][1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
+            'peak_growth': logistic_model(fit[0][1]+1, fit[0][0], fit[0][1], fit[0][2]) - logistic_model(fit[0][1], fit[0][0], fit[0][1], fit[0][2]),
+            'tomorrow_growth': logistic_model(x_data[-1]+1, fit[0][0], fit[0][1], fit[0][2]) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': fit[0][0],
             'x_scale_error': errors[0]
         }
-    except RuntimeError:
-        print("No sigmoid fit due to exception.")
+    except RuntimeError as r:
+        print("No sigmoid fit due to exception: {}".format(r))
         return None
 
 
@@ -87,7 +91,9 @@ def exponential_model(day, ln_daily_growth, x_shift):
 
 def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
-    expfit = curve_fit(exponential_model, x_data, y_data)
+    sigma = [1] * len(y_data)
+    # sigma[-1] = 0.1
+    expfit = curve_fit(exponential_model, x_data, y_data, sigma = sigma)
     params = expfit[0]
     errors = np.sqrt(np.diag(expfit[1]))
 
@@ -95,6 +101,7 @@ def fit_exponential_model(x_data, y_data):
         'ln_daily_growth': params[0],
         'ln_daily_growth_error': errors[0],
         'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
+        'tomorrow_growth': exponential_model(x_data[-1]+1, expfit[0][0], expfit[0][1]) - y_data[-1],
         'raw_daily_growth': np.exp(params[0]),
         'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
         'x_shift': params[1],
@@ -171,8 +178,10 @@ def main():
     log_result = fit_logistic_model(x_data, y_data)
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
-            "{} ± {:.2f} nap".format(
-                log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'])
+            "{} ± {:.2f} nap (Max meredekség: {:.2f}, holnapi növekmény kb. {:.2f})".format(
+                log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'],
+                log_result['peak_growth'], log_result['tomorrow_growth']
+            )
         print(peak_date_str)
         max_inf_str = "Szigmoid maximum: {:.2f} ± {:.2f} eset".format(
             log_result['max_inf'] + Y_BASE, log_result['max_inf_error'])
@@ -184,14 +193,12 @@ def main():
 
     exp_result = fit_exponential_model(x_data, y_data)
     print(exp_result)
-    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta)".format(
-        exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100, math.log(2)/math.log(exp_result['daily_growth']) )
+    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta, holnapi növekmény kb. {:.2f})".format(
+            exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100, math.log(2)/math.log(exp_result['daily_growth']),
+            exp_result['tomorrow_growth']
+        )
     print(daily_growth_str)
     print("ln daily growth: {}, x_shift: {}".format(exp_result["ln_daily_growth"], exp_result["x_shift"]))
-
-    still_exp_str = "Ebben az ütemben való növekedés esetén a "\
-        "holnapi szám kb. {:.0f}".format(
-            (exp_result['daily_growth']-1)*(y_data[-1]-Y_BASE))
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
 
@@ -227,8 +234,7 @@ def main():
     plt.gcf().text(0.01, 0.01,
                    max_inf_str + "\n" +
                    peak_date_str + "\n" +
-                   daily_growth_str + "\n" +
-                   still_exp_str, va='bottom'
+                   daily_growth_str, va='bottom'
                    )
     plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
     plt.legend()
