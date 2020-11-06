@@ -178,7 +178,7 @@ def main():
     log_result = fit_logistic_model(x_data, y_data)
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
-            "{} ± {:.2f} nap (Max meredekség: {:.2f}, holnapi görbe - mai adat ≈ {:.2f})".format(
+            "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
                 log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'],
                 log_result['peak_growth'], log_result['tomorrow_growth']
             )
@@ -193,7 +193,7 @@ def main():
 
     exp_result = fit_exponential_model(x_data, y_data)
     print(exp_result)
-    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta, holnapi görbe - mai adat ≈ {:.2f})".format(
+    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})".format(
             exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100, math.log(2)/math.log(exp_result['daily_growth']),
             exp_result['tomorrow_growth']
         )
