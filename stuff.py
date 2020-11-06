@@ -39,7 +39,7 @@ def parse_covid_data(filename):
             BASE_DATE = parsed_date
         LAST_DATE = fields[0]
         date = (parsed_date - BASE_DATE).days
-        number = int(fields[1])
+        number = float(fields[1])
         x_data.append(date)
         y_data.append(number)
 
