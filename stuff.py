@@ -64,7 +64,11 @@ def fit_logistic_model(x_data, y_data):
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
-            print("No sigmoid fit due to infinite covariance.")
+            print("No sigmoid fit due to too large covariance.")
+            return None
+
+        if max_inf_error > max_inf:
+            print("No sigmoid fit because the uncertainty of the maximum is larger than the maximum itself.")
             return None
 
         return {
