@@ -187,7 +187,7 @@ def main():
                 log_result['peak_growth'], log_result['tomorrow_growth']
             )
         print(peak_date_str)
-        max_inf_str = "Szigmoid maximum: {:.2f} ± {:.2f} eset".format(
+        max_inf_str = "Szigmoid maximum: {:.2f} ± {:.2f}".format(
             log_result['max_inf'] + Y_BASE, log_result['max_inf_error'])
         print(max_inf_str)
     else:
