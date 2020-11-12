@@ -17,8 +17,6 @@ if 1 < 2:
     import matplotlib.pyplot as plt
 
 
-Y_BASE = ''
-
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
@@ -55,12 +53,12 @@ def get_logistic_model(y_base):
 
 
 
-def fit_logistic_model(x_data, y_data, base_date):
+def fit_logistic_model(x_data, y_data, y_base, base_date):
     "Fits data into logistic curve"
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_logistic_model(Y_BASE)
+        model = get_logistic_model(y_base)
         popt, pcov = curve_fit(model, x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
@@ -104,11 +102,11 @@ def get_exponential_model(y_base):
     return exponential_model
 
 
-def fit_exponential_model(x_data, y_data):
+def fit_exponential_model(x_data, y_data, y_base):
     "Fits exponential model to data"
     sigma = [1] * len(y_data)
     # sigma[-1] = 0.1
-    model = get_exponential_model(Y_BASE)
+    model = get_exponential_model(y_base)
     popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
     params = popt
     errors = np.sqrt(np.diag(pcov))
@@ -127,7 +125,7 @@ def fit_exponential_model(x_data, y_data):
     }
 
 
-def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
+def create_curve_data(x_data, y_data, y_base, base_date, log_result, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
@@ -143,10 +141,10 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
                 for x in range(x_data[0], x_data[0] + days_to_simulate)]
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
     if not log_result is None:
-        out_log = [get_logistic_model(Y_BASE)(x, *log_result['popt']) for x in days]
+        out_log = [get_logistic_model(y_base)(x, *log_result['popt']) for x in days]
     else:
         out_log = [float('nan')] * days_to_simulate
-    out_exp = [get_exponential_model(Y_BASE)(x, *exp_result['popt']) for x in days]
+    out_exp = [get_exponential_model(y_base)(x, *exp_result['popt']) for x in days]
 
     return {
         'date': out_date,
@@ -160,7 +158,6 @@ def main():
     "Entry point"
 
     death_mode = False
-    global Y_BASE
 
     if len(sys.argv) > 1:
         death_mode = sys.argv[1] == '--deaths'
@@ -182,9 +179,9 @@ def main():
         plot_title = 'COVID-19 görbeillesztés - összes eset'
 
     x_data, y_data, base_date, last_date = parse_covid_data(file_name)
-    Y_BASE = y_data[0]
+    y_base = y_data[0]
 
-    log_result = fit_logistic_model(x_data, y_data, base_date)
+    log_result = fit_logistic_model(x_data, y_data, y_base, base_date)
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
@@ -194,14 +191,14 @@ def main():
             )
         print(peak_date_str)
         max_inf_str = "Szigmoid maximum: {:.2f} ± {:.2f}".format(
-            log_result['max_inf'] + Y_BASE, log_result['max_inf_error'])
+            log_result['max_inf'] + y_base, log_result['max_inf_error'])
         print(max_inf_str)
     else:
         peak_date_str = "Szigmoid modell nem illeszkedik az adatokra."
         max_inf_str = ""
         print("Logistic curve is too bad fit for current data")
 
-    exp_result = fit_exponential_model(x_data, y_data)
+    exp_result = fit_exponential_model(x_data, y_data, y_base)
     print(exp_result)
     daily_growth_str = ("Napi növekedés az exponenciális modell alapján:"
                         " {:.2f}% ± {:.2}%."
@@ -214,7 +211,7 @@ def main():
     print("ln daily growth: {}, x_shift: {}".format(
         exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
-    curve_data = create_curve_data(x_data, y_data, base_date, log_result, exp_result)
+    curve_data = create_curve_data(x_data, y_data, y_base, base_date, log_result, exp_result)
 
     print("{:<15}{:<15}{:<15}{:<15}".format(
         "Date", "Actual", "Predicted log", "Predicted exp"))
@@ -251,7 +248,7 @@ def main():
                    peak_date_str + "\n" +
                    daily_growth_str, va='bottom'
                    )
-    plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
+    plt.axis([min(curve_data['date']), max(curve_data['date']), y_base, max_y])
     plt.legend()
     plt.grid()
     plt.title("{} {}".format(plot_title, last_date))
