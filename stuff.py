@@ -97,15 +97,15 @@ def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
     sigma = [1] * len(y_data)
     # sigma[-1] = 0.1
-    expfit = curve_fit(exponential_model, x_data, y_data, sigma = sigma)
-    params = expfit[0]
-    errors = np.sqrt(np.diag(expfit[1]))
+    popt, pcov = curve_fit(exponential_model, x_data, y_data, sigma = sigma)
+    params = popt
+    errors = np.sqrt(np.diag(pcov))
 
     return {
         'ln_daily_growth': params[0],
         'ln_daily_growth_error': errors[0],
         'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
-        'tomorrow_growth': exponential_model(x_data[-1]+1, expfit[0][0], expfit[0][1]) - y_data[-1],
+        'tomorrow_growth': exponential_model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
         'raw_daily_growth': np.exp(params[0]),
         'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
         'x_shift': params[1],
