@@ -56,11 +56,11 @@ def fit_logistic_model(x_data, y_data):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        fit = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000], sigma = sigma)
-        errors = np.sqrt(np.diag(fit[1]))
-        peak_date = (BASE_DATE + datetime.timedelta(days=fit[0][1]))
+        popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000], sigma = sigma)
+        errors = np.sqrt(np.diag(pcov))
+        peak_date = (BASE_DATE + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
-        max_inf = fit[0][2]
+        max_inf = popt[2]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
@@ -72,14 +72,14 @@ def fit_logistic_model(x_data, y_data):
             return None
 
         return {
-            'peak': fit[0][1],
+            'peak': popt[1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
-            'peak_growth': logistic_model(fit[0][1]+1, fit[0][0], fit[0][1], fit[0][2]) - logistic_model(fit[0][1], fit[0][0], fit[0][1], fit[0][2]),
-            'tomorrow_growth': logistic_model(x_data[-1]+1, fit[0][0], fit[0][1], fit[0][2]) - y_data[-1],
+            'peak_growth': logistic_model(popt[1]+1, popt[0], popt[1], popt[2]) - logistic_model(popt[1], popt[0], popt[1], popt[2]),
+            'tomorrow_growth': logistic_model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
-            'x_scale': fit[0][0],
+            'x_scale': popt[0],
             'x_scale_error': errors[0]
         }
     except RuntimeError as r:
