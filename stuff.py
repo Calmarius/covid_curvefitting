@@ -90,7 +90,8 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak_date_error': peak_date_error,
             'peak_growth': model(popt[1]+1, popt[0], popt[1], popt[2])
             - model(popt[1], popt[0], popt[1], popt[2]),
-            'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
+            'tomorrow_growth':
+                model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
@@ -128,7 +129,10 @@ def fit_exponential_model(x_data, y_data):
         'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
         'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
         'raw_daily_growth': np.exp(params[0]),
-        'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
+        'daily_growth_error': np.sqrt(
+            (np.exp(errors[0]**2)-1) *
+            np.exp(2*params[0]+errors[0]**2)
+        ),
         'x_shift': params[1],
         'x_shift_error': errors[1],
         'popt': popt,
@@ -145,7 +149,9 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
     else:
         days_to_simulate = max(
-            2*(log_result['peak_date'] - base_date).days, x_data[-1] - x_data[0] + 1)
+            2*(log_result['peak_date'] - base_date).days,
+            x_data[-1] - x_data[0] + 1
+        )
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
@@ -153,7 +159,7 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
 
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
 
-    if not log_result is None:
+    if log_result is not None:
         out_log = [get_logistic_model(y_data[0])(
             x, *log_result['popt']) for x in days]
     else:
@@ -169,6 +175,7 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
         'exponential': out_exp
     }
 
+
 def print_curves(curve_data):
     "Prints the curve data into terminal."
 
@@ -182,6 +189,7 @@ def print_curves(curve_data):
             curve_data['exponential'][i]
         ))
 
+
 def save_plot(curve_data, covid_data, log_result, texts):
     "Generates and saves the plot."
 
@@ -193,7 +201,7 @@ def save_plot(curve_data, covid_data, log_result, texts):
     plt.figure(figsize=[10.24, 7.68])
     plt.plot(curve_data['date'], curve_data['y'],
              texts['element_marker'], label=texts['cases_axis_name'])
-    if not log_result is None:
+    if log_result is not None:
         plt.plot(curve_data['date'], curve_data['logistic'],
                  'g-', label='Szigmoid modell')
     plt.plot(curve_data['date'], curve_data['exponential'],
@@ -210,7 +218,8 @@ def save_plot(curve_data, covid_data, log_result, texts):
                    texts['peak_date_str'] + "\n" +
                    texts['daily_growth_str'], va='bottom'
                    )
-    plt.axis([min(curve_data['date']), max(curve_data['date']), covid_data['y_data'][0], max_y])
+    plt.axis([min(curve_data['date']), max(
+        curve_data['date']), covid_data['y_data'][0], max_y])
     plt.legend()
     plt.grid()
     plt.title("{} {}".format(texts['plot_title'], covid_data['last_date_str']))
@@ -218,7 +227,6 @@ def save_plot(curve_data, covid_data, log_result, texts):
         texts['plot_file_suffix']+'.png'
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
-
 
 
 def main():
@@ -254,15 +262,19 @@ def main():
 
     log_result = fit_logistic_model(
         covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
-    if not log_result is None:
-        texts['peak_date_str'] = "Szigmoid inflexiós pont: " \
-            "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
-                log_result['peak_date'].strftime(
-                    '%Y-%m-%d'), log_result['peak_date_error'],
-                log_result['peak_growth'], log_result['tomorrow_growth']
-            )
+    if log_result is not None:
+        texts['peak_date_str'] = (
+            "Szigmoid inflexiós pont: "
+            "{} ± {:.2f} nap"
+            " (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})").format(
+            log_result['peak_date'].strftime(
+                '%Y-%m-%d'), log_result['peak_date_error'],
+            log_result['peak_growth'], log_result['tomorrow_growth']
+        )
         texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f}".format(
-            log_result['max_inf'] + covid_data['y_data'][0], log_result['max_inf_error'])
+            log_result['max_inf'] + covid_data['y_data'][0],
+            log_result['max_inf_error']
+        )
         print(texts['max_inf_str'])
     else:
         texts['peak_date_str'] = "Szigmoid modell nem illeszkedik az adatokra."
@@ -272,13 +284,14 @@ def main():
     exp_result = fit_exponential_model(
         covid_data['x_data'], covid_data['y_data'])
     print(exp_result)
-    texts['daily_growth_str'] = ("Napi növekedés az exponenciális modell alapján:"
-                        " {:.2f}% ± {:.2}%."
-                        " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
-                            exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
-                            100, math.log(
-                                2)/math.log(exp_result['daily_growth']),
-                            exp_result['tomorrow_growth']
+    texts['daily_growth_str'] = (
+        "Napi növekedés az exponenciális modell alapján:"
+        " {:.2f}% ± {:.2}%."
+        " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
+        exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
+        100, math.log(
+            2)/math.log(exp_result['daily_growth']),
+        exp_result['tomorrow_growth']
     )
     print(texts['daily_growth_str'])
     print("ln daily growth: {}, x_shift: {}".format(
@@ -295,6 +308,7 @@ def main():
     print_curves(curve_data)
 
     save_plot(curve_data, covid_data, log_result, texts)
+
 
 if __name__ == "__main__":
     main()
