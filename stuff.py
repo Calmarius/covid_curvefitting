@@ -59,13 +59,13 @@ def get_logistic_model(y_base):
     return logistic_model
 
 
-def fit_logistic_model(x_data, y_data, y_base, base_date):
+def fit_logistic_model(x_data, y_data, base_date):
     "Fits data into logistic curve"
 
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_logistic_model(y_base)
+        model = get_logistic_model(y_data[0])
         popt, pcov = curve_fit(model, x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
@@ -113,11 +113,11 @@ def get_exponential_model(y_base):
     return exponential_model
 
 
-def fit_exponential_model(x_data, y_data, y_base):
+def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
     sigma = [1] * len(y_data)
     # sigma[-1] = 0.1
-    model = get_exponential_model(y_base)
+    model = get_exponential_model(y_data[0])
     popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
     params = popt
     errors = np.sqrt(np.diag(pcov))
@@ -136,7 +136,7 @@ def fit_exponential_model(x_data, y_data, y_base):
     }
 
 
-def create_curve_data(x_data, y_data, y_base, base_date, log_result, exp_result):
+def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
@@ -154,12 +154,12 @@ def create_curve_data(x_data, y_data, y_base, base_date, log_result, exp_result)
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
 
     if not log_result is None:
-        out_log = [get_logistic_model(y_base)(
+        out_log = [get_logistic_model(y_data[0])(
             x, *log_result['popt']) for x in days]
     else:
         out_log = [float('nan')] * days_to_simulate
 
-    out_exp = [get_exponential_model(y_base)(
+    out_exp = [get_exponential_model(y_data[0])(
         x, *exp_result['popt']) for x in days]
 
     return {
@@ -182,8 +182,7 @@ def print_curves(curve_data):
             curve_data['exponential'][i]
         ))
 
-# TODO for me: Maybe add y_base to covid_data
-def save_plot(curve_data, covid_data, y_base, log_result, texts):
+def save_plot(curve_data, covid_data, log_result, texts):
     "Generates and saves the plot."
 
     axes = plt.gca()
@@ -211,7 +210,7 @@ def save_plot(curve_data, covid_data, y_base, log_result, texts):
                    texts['peak_date_str'] + "\n" +
                    texts['daily_growth_str'], va='bottom'
                    )
-    plt.axis([min(curve_data['date']), max(curve_data['date']), y_base, max_y])
+    plt.axis([min(curve_data['date']), max(curve_data['date']), covid_data['y_data'][0], max_y])
     plt.legend()
     plt.grid()
     plt.title("{} {}".format(texts['plot_title'], covid_data['last_date_str']))
@@ -252,10 +251,9 @@ def main():
 
     # x_data, y_data, base_date, last_date
     covid_data = parse_covid_data(texts['file_name'])
-    y_base = covid_data['y_data'][0]
 
     log_result = fit_logistic_model(
-        covid_data['x_data'], covid_data['y_data'], y_base, covid_data['base_date'])
+        covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
     if not log_result is None:
         texts['peak_date_str'] = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
@@ -264,7 +262,7 @@ def main():
                 log_result['peak_growth'], log_result['tomorrow_growth']
             )
         texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f}".format(
-            log_result['max_inf'] + y_base, log_result['max_inf_error'])
+            log_result['max_inf'] + covid_data['y_data'][0], log_result['max_inf_error'])
         print(texts['max_inf_str'])
     else:
         texts['peak_date_str'] = "Szigmoid modell nem illeszkedik az adatokra."
@@ -272,7 +270,7 @@ def main():
         print("Logistic curve is too bad fit for current data")
 
     exp_result = fit_exponential_model(
-        covid_data['x_data'], covid_data['y_data'], y_base)
+        covid_data['x_data'], covid_data['y_data'])
     print(exp_result)
     texts['daily_growth_str'] = ("Napi növekedés az exponenciális modell alapján:"
                         " {:.2f}% ± {:.2}%."
@@ -289,7 +287,6 @@ def main():
     curve_data = create_curve_data(
         covid_data['x_data'],
         covid_data['y_data'],
-        y_base,
         covid_data['base_date'],
         log_result,
         exp_result
@@ -297,7 +294,7 @@ def main():
 
     print_curves(curve_data)
 
-    save_plot(curve_data, covid_data, y_base, log_result, texts)
+    save_plot(curve_data, covid_data, log_result, texts)
 
 if __name__ == "__main__":
     main()
