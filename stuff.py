@@ -4,21 +4,22 @@
 Quickly written curve fitting script for covid data.
 """
 
+import math
+import sys
+from scipy.optimize import curve_fit
+import numpy as np
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import datetime
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-from scipy.optimize import curve_fit
-import sys
-import math
 
 BASE_DATE = ''
 Y_BASE = ''
 
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
 LAST_DATE = ''
+
 
 def parse_covid_data(filename):
     "Loads the date from file into two lists separate x and y list"
@@ -56,7 +57,8 @@ def fit_logistic_model(x_data, y_data):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[2, 60, 100000], sigma = sigma)
+        popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[
+                               2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (BASE_DATE + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
@@ -68,7 +70,8 @@ def fit_logistic_model(x_data, y_data):
             return None
 
         if max_inf_error > max_inf:
-            print("No sigmoid fit because the uncertainty of the maximum is larger than the maximum itself.")
+            print(
+                "No sigmoid fit because the uncertainty of the maximum is larger than the maximum itself.")
             return None
 
         return {
@@ -89,7 +92,6 @@ def fit_logistic_model(x_data, y_data):
         return None
 
 
-
 def exponential_model(day, ln_daily_growth, x_shift):
     "Exponential model formula"
     return np.exp(ln_daily_growth*(day-x_shift)) + Y_BASE
@@ -99,7 +101,7 @@ def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
     sigma = [1] * len(y_data)
     # sigma[-1] = 0.1
-    popt, pcov = curve_fit(exponential_model, x_data, y_data, sigma = sigma)
+    popt, pcov = curve_fit(exponential_model, x_data, y_data, sigma=sigma)
     params = popt
     errors = np.sqrt(np.diag(pcov))
 
@@ -125,10 +127,12 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
     if log_result is None:
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
     else:
-        days_to_simulate = max(2*(log_result['peak_date'] - BASE_DATE).days, x_data[-1] - x_data[0] + 1)
+        days_to_simulate = max(
+            2*(log_result['peak_date'] - BASE_DATE).days, x_data[-1] - x_data[0] + 1)
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
-    out_date = [BASE_DATE + datetime.timedelta(days=x) for x in range(x_data[0], x_data[0] + days_to_simulate)]
+    out_date = [BASE_DATE + datetime.timedelta(days=x)
+                for x in range(x_data[0], x_data[0] + days_to_simulate)]
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
     if not log_result is None:
         out_log = [logistic_model(x, *log_result['popt']) for x in days]
@@ -170,7 +174,6 @@ def main():
         plot_file_suffix = ''
         plot_title = 'COVID-19 görbeillesztés - összes eset'
 
-
     x_data, y_data = parse_covid_data(file_name)
     Y_BASE = y_data[0]
 
@@ -178,7 +181,8 @@ def main():
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
-                log_result['peak_date'].strftime('%Y-%m-%d'), log_result['peak_date_error'],
+                log_result['peak_date'].strftime(
+                    '%Y-%m-%d'), log_result['peak_date_error'],
                 log_result['peak_growth'], log_result['tomorrow_growth']
             )
         print(peak_date_str)
@@ -193,15 +197,18 @@ def main():
     exp_result = fit_exponential_model(x_data, y_data)
     print(exp_result)
     daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})".format(
-            exp_result['daily_growth']*100-100, exp_result['daily_growth_error']*100, math.log(2)/math.log(exp_result['daily_growth']),
-            exp_result['tomorrow_growth']
-        )
+        exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
+        100, math.log(2)/math.log(exp_result['daily_growth']),
+        exp_result['tomorrow_growth']
+    )
     print(daily_growth_str)
-    print("ln daily growth: {}, x_shift: {}".format(exp_result["ln_daily_growth"], exp_result["x_shift"]))
+    print("ln daily growth: {}, x_shift: {}".format(
+        exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
 
-    print("{:<15}{:<15}{:<15}{:<15}".format("Date", "Actual", "Predicted log", "Predicted exp"))
+    print("{:<15}{:<15}{:<15}{:<15}".format(
+        "Date", "Actual", "Predicted log", "Predicted exp"))
     for i in range(0, len(curve_data['date'])):
         print("{:<15}{:>15}{:>15.2f}{:>15.2f}".format(
             curve_data['date'][i].strftime('%Y-%m-%d'),
