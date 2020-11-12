@@ -8,11 +8,14 @@ import math
 import sys
 from scipy.optimize import curve_fit
 import numpy as np
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import datetime
 import matplotlib
+
 matplotlib.use('Agg')
+if 1 < 2:
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+
 
 BASE_DATE = ''
 Y_BASE = ''
@@ -58,7 +61,7 @@ def fit_logistic_model(x_data, y_data):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[
-                               2, 60, 100000], sigma=sigma)
+            2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (BASE_DATE + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
@@ -71,14 +74,16 @@ def fit_logistic_model(x_data, y_data):
 
         if max_inf_error > max_inf:
             print(
-                "No sigmoid fit because the uncertainty of the maximum is larger than the maximum itself.")
+                "No sigmoid fit because the uncertainty of the "
+                "maximum is larger than the maximum itself.")
             return None
 
         return {
             'peak': popt[1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
-            'peak_growth': logistic_model(popt[1]+1, popt[0], popt[1], popt[2]) - logistic_model(popt[1], popt[0], popt[1], popt[2]),
+            'peak_growth': logistic_model(popt[1]+1, popt[0], popt[1], popt[2])
+                           - logistic_model(popt[1], popt[0], popt[1], popt[2]),
             'tomorrow_growth': logistic_model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
@@ -87,8 +92,8 @@ def fit_logistic_model(x_data, y_data):
             'popt': popt,
             'pcov': pcov
         }
-    except RuntimeError as r:
-        print("No sigmoid fit due to exception: {}".format(r))
+    except RuntimeError as rte:
+        print("No sigmoid fit due to exception: {}".format(rte))
         return None
 
 
@@ -196,11 +201,13 @@ def main():
 
     exp_result = fit_exponential_model(x_data, y_data)
     print(exp_result)
-    daily_growth_str = "Napi növekedés az exponenciális modell alapján: {:.2f}% ± {:.2}%. (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})".format(
-        exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
-        100, math.log(2)/math.log(exp_result['daily_growth']),
-        exp_result['tomorrow_growth']
-    )
+    daily_growth_str = ("Napi növekedés az exponenciális modell alapján:"
+                        " {:.2f}% ± {:.2}%."
+                        " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
+                            exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
+                            100, math.log(2)/math.log(exp_result['daily_growth']),
+                            exp_result['tomorrow_growth']
+                        )
     print(daily_growth_str)
     print("ln daily growth: {}, x_shift: {}".format(
         exp_result["ln_daily_growth"], exp_result["x_shift"]))
