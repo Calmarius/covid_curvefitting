@@ -20,7 +20,6 @@ if 1 < 2:
 Y_BASE = ''
 
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
-LAST_DATE = ''
 
 
 def parse_covid_data(filename):
@@ -30,7 +29,7 @@ def parse_covid_data(filename):
 
     x_data = []
     y_data = []
-    global LAST_DATE
+    last_date = ''
     base_date = ''
 
     for line in content:
@@ -40,13 +39,13 @@ def parse_covid_data(filename):
         parsed_date = datetime.datetime.strptime(fields[0], '%Y-%m-%d')
         if base_date == '':
             base_date = parsed_date
-        LAST_DATE = fields[0]
+        last_date = fields[0]
         date = (parsed_date - base_date).days
         number = float(fields[1])
         x_data.append(date)
         y_data.append(number)
 
-    return x_data, y_data, base_date
+    return x_data, y_data, base_date, last_date
 
 
 def logistic_model(day, x_scale, peak, max_cases):
@@ -177,7 +176,7 @@ def main():
         plot_file_suffix = ''
         plot_title = 'COVID-19 görbeillesztés - összes eset'
 
-    x_data, y_data, base_date = parse_covid_data(file_name)
+    x_data, y_data, base_date, last_date = parse_covid_data(file_name)
     Y_BASE = y_data[0]
 
     log_result = fit_logistic_model(x_data, y_data, base_date)
@@ -250,8 +249,8 @@ def main():
     plt.axis([min(curve_data['date']), max(curve_data['date']), Y_BASE, max_y])
     plt.legend()
     plt.grid()
-    plt.title("{} {}".format(plot_title, LAST_DATE))
-    file_name = 'plot-'+LAST_DATE+plot_file_suffix+'.png'
+    plt.title("{} {}".format(plot_title, last_date))
+    file_name = 'plot-'+last_date+plot_file_suffix+'.png'
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
