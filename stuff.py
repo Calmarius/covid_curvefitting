@@ -17,7 +17,6 @@ if 1 < 2:
     import matplotlib.pyplot as plt
 
 
-BASE_DATE = ''
 Y_BASE = ''
 
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -32,22 +31,22 @@ def parse_covid_data(filename):
     x_data = []
     y_data = []
     global LAST_DATE
-    global BASE_DATE
+    base_date = ''
 
     for line in content:
         fields = line.split()
         if len(fields) < 2:
             continue
         parsed_date = datetime.datetime.strptime(fields[0], '%Y-%m-%d')
-        if BASE_DATE == '':
-            BASE_DATE = parsed_date
+        if base_date == '':
+            base_date = parsed_date
         LAST_DATE = fields[0]
-        date = (parsed_date - BASE_DATE).days
+        date = (parsed_date - base_date).days
         number = float(fields[1])
         x_data.append(date)
         y_data.append(number)
 
-    return x_data, y_data
+    return x_data, y_data, base_date
 
 
 def logistic_model(day, x_scale, peak, max_cases):
@@ -55,7 +54,7 @@ def logistic_model(day, x_scale, peak, max_cases):
     return max_cases/(1+np.exp(-(day-peak)/x_scale)) + Y_BASE
 
 
-def fit_logistic_model(x_data, y_data):
+def fit_logistic_model(x_data, y_data, base_date):
     "Fits data into logistic curve"
     try:
         sigma = [1] * len(y_data)
@@ -63,7 +62,7 @@ def fit_logistic_model(x_data, y_data):
         popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
-        peak_date = (BASE_DATE + datetime.timedelta(days=popt[1]))
+        peak_date = (base_date + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
@@ -124,7 +123,7 @@ def fit_exponential_model(x_data, y_data):
     }
 
 
-def create_curve_data(x_data, y_data, log_result, exp_result):
+def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
@@ -133,10 +132,10 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
     else:
         days_to_simulate = max(
-            2*(log_result['peak_date'] - BASE_DATE).days, x_data[-1] - x_data[0] + 1)
+            2*(log_result['peak_date'] - base_date).days, x_data[-1] - x_data[0] + 1)
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
-    out_date = [BASE_DATE + datetime.timedelta(days=x)
+    out_date = [base_date + datetime.timedelta(days=x)
                 for x in range(x_data[0], x_data[0] + days_to_simulate)]
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
     if not log_result is None:
@@ -157,7 +156,6 @@ def main():
     "Entry point"
 
     death_mode = False
-    global BASE_DATE
     global Y_BASE
 
     if len(sys.argv) > 1:
@@ -179,10 +177,10 @@ def main():
         plot_file_suffix = ''
         plot_title = 'COVID-19 görbeillesztés - összes eset'
 
-    x_data, y_data = parse_covid_data(file_name)
+    x_data, y_data, base_date = parse_covid_data(file_name)
     Y_BASE = y_data[0]
 
-    log_result = fit_logistic_model(x_data, y_data)
+    log_result = fit_logistic_model(x_data, y_data, base_date)
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
@@ -212,7 +210,7 @@ def main():
     print("ln daily growth: {}, x_shift: {}".format(
         exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
-    curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
+    curve_data = create_curve_data(x_data, y_data, base_date, log_result, exp_result)
 
     print("{:<15}{:<15}{:<15}{:<15}".format(
         "Date", "Actual", "Predicted log", "Predicted exp"))
