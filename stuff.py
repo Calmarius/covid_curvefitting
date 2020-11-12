@@ -94,17 +94,19 @@ def fit_logistic_model(x_data, y_data, base_date):
         print("No sigmoid fit due to exception: {}".format(rte))
         return None
 
-
-def exponential_model(day, ln_daily_growth, x_shift):
-    "Exponential model formula"
-    return np.exp(ln_daily_growth*(day-x_shift)) + Y_BASE
+def get_exponential_model(y_base):
+    def exponential_model(day, ln_daily_growth, x_shift):
+        "Exponential model formula"
+        return np.exp(ln_daily_growth*(day-x_shift)) + y_base
+    return exponential_model
 
 
 def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
     sigma = [1] * len(y_data)
     # sigma[-1] = 0.1
-    popt, pcov = curve_fit(exponential_model, x_data, y_data, sigma=sigma)
+    model = get_exponential_model(Y_BASE)
+    popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
     params = popt
     errors = np.sqrt(np.diag(pcov))
 
@@ -112,7 +114,7 @@ def fit_exponential_model(x_data, y_data):
         'ln_daily_growth': params[0],
         'ln_daily_growth_error': errors[0],
         'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
-        'tomorrow_growth': exponential_model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
+        'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
         'raw_daily_growth': np.exp(params[0]),
         'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
         'x_shift': params[1],
@@ -141,7 +143,7 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
         out_log = [logistic_model(x, *log_result['popt']) for x in days]
     else:
         out_log = [float('nan')] * days_to_simulate
-    out_exp = [exponential_model(x, *exp_result['popt']) for x in days]
+    out_exp = [get_exponential_model(Y_BASE)(x, *exp_result['popt']) for x in days]
 
     return {
         'date': out_date,
