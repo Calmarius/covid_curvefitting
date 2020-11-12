@@ -47,10 +47,12 @@ def parse_covid_data(filename):
 
     return x_data, y_data, base_date, last_date
 
+def get_logistic_model(y_base):
+    def logistic_model(day, x_scale, peak, max_cases):
+        "Logistic model formula"
+        return max_cases/(1+np.exp(-(day-peak)/x_scale)) + y_base
+    return logistic_model
 
-def logistic_model(day, x_scale, peak, max_cases):
-    "Logistic model formula"
-    return max_cases/(1+np.exp(-(day-peak)/x_scale)) + Y_BASE
 
 
 def fit_logistic_model(x_data, y_data, base_date):
@@ -58,7 +60,8 @@ def fit_logistic_model(x_data, y_data, base_date):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        popt, pcov = curve_fit(logistic_model, x_data, y_data, p0=[
+        model = get_logistic_model(Y_BASE)
+        popt, pcov = curve_fit(model, x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
@@ -80,9 +83,9 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak': popt[1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
-            'peak_growth': logistic_model(popt[1]+1, popt[0], popt[1], popt[2])
-                           - logistic_model(popt[1], popt[0], popt[1], popt[2]),
-            'tomorrow_growth': logistic_model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
+            'peak_growth': model(popt[1]+1, popt[0], popt[1], popt[2])
+                           - model(popt[1], popt[0], popt[1], popt[2]),
+            'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
@@ -140,7 +143,7 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
                 for x in range(x_data[0], x_data[0] + days_to_simulate)]
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
     if not log_result is None:
-        out_log = [logistic_model(x, *log_result['popt']) for x in days]
+        out_log = [get_logistic_model(Y_BASE)(x, *log_result['popt']) for x in days]
     else:
         out_log = [float('nan')] * days_to_simulate
     out_exp = [get_exponential_model(Y_BASE)(x, *exp_result['popt']) for x in days]
