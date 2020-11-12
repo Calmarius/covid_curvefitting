@@ -80,7 +80,9 @@ def fit_logistic_model(x_data, y_data):
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
-            'x_scale_error': errors[0]
+            'x_scale_error': errors[0],
+            'popt': popt,
+            'pcov': pcov
         }
     except RuntimeError as r:
         print("No sigmoid fit due to exception: {}".format(r))
@@ -109,7 +111,9 @@ def fit_exponential_model(x_data, y_data):
         'raw_daily_growth': np.exp(params[0]),
         'daily_growth_error': np.sqrt((np.exp(errors[0]**2)-1)*np.exp(2*params[0]+errors[0]**2)),
         'x_shift': params[1],
-        'x_shift_error': errors[1]
+        'x_shift_error': errors[1],
+        'popt': popt,
+        'pcov': pcov
     }
 
 
@@ -122,24 +126,13 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
     else:
         days_to_simulate = max(2*(log_result['peak_date'] - BASE_DATE).days, x_data[-1] - x_data[0] + 1)
-    i = 0
-    day_base = x_data[0]
-    out_date = []
-    out_y = []
-    out_log = []
-    out_exp = []
-    while i < days_to_simulate:
-        day = day_base + i
-        out_date.append(BASE_DATE + datetime.timedelta(days=day))
-        out_y.append(y_data[i] if i < len(y_data) else float('nan'))
-        if not log_result is None:
-            out_log.append(logistic_model(
-                day, log_result['x_scale'], log_result['peak'], log_result['max_inf']))
-        else:
-            out_log.append(0)
-        out_exp.append(exponential_model(
-            day, exp_result['ln_daily_growth'], exp_result['x_shift']))
-        i = i + 1
+
+    days = range(x_data[0], x_data[0] + days_to_simulate)
+    out_date = [BASE_DATE + datetime.timedelta(days=x) for x in range(x_data[0], x_data[0] + days_to_simulate)]
+    out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
+    if not log_result is None:
+        out_log = [logistic_model(x, *log_result['popt']) for x in days]
+    out_exp = [exponential_model(x, *exp_result['popt']) for x in days]
 
     return {
         'date': out_date,
