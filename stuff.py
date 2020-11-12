@@ -132,6 +132,8 @@ def create_curve_data(x_data, y_data, log_result, exp_result):
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
     if not log_result is None:
         out_log = [logistic_model(x, *log_result['popt']) for x in days]
+    else:
+        out_log = [float('nan')] * days_to_simulate
     out_exp = [exponential_model(x, *exp_result['popt']) for x in days]
 
     return {
@@ -199,10 +201,10 @@ def main():
 
     curve_data = create_curve_data(x_data, y_data, log_result, exp_result)
 
-    print("Date\tActual\tPredicted log\tPredicted exp")
+    print("{:<15}{:<15}{:<15}{:<15}".format("Date", "Actual", "Predicted log", "Predicted exp"))
     for i in range(0, len(curve_data['date'])):
-        print("{}\t{}\t{}\t{}".format(
-            curve_data['date'][i],
+        print("{:<15}{:>15}{:>15.2f}{:>15.2f}".format(
+            curve_data['date'][i].strftime('%Y-%m-%d'),
             curve_data['y'][i],
             curve_data['logistic'][i],
             curve_data['exponential'][i]
