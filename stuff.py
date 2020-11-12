@@ -6,9 +6,9 @@ Quickly written curve fitting script for covid data.
 
 import math
 import sys
+import datetime
 from scipy.optimize import curve_fit
 import numpy as np
-import datetime
 import matplotlib
 
 matplotlib.use('Agg')
