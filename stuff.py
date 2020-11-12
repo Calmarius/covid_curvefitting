@@ -43,7 +43,12 @@ def parse_covid_data(filename):
         x_data.append(date)
         y_data.append(number)
 
-    return x_data, y_data, base_date, last_date
+    return {
+        'x_data': x_data,
+        'y_data': y_data,
+        'base_date': base_date,
+        'last_date_str': last_date
+    }
 
 
 def get_logistic_model(y_base):
@@ -193,10 +198,12 @@ def main():
             'plot_title': 'COVID-19 görbeillesztés - összes eset',
         }
 
-    x_data, y_data, base_date, last_date = parse_covid_data(texts['file_name'])
-    y_base = y_data[0]
+    # x_data, y_data, base_date, last_date
+    covid_data = parse_covid_data(texts['file_name'])
+    y_base = covid_data['y_data'][0]
 
-    log_result = fit_logistic_model(x_data, y_data, y_base, base_date)
+    log_result = fit_logistic_model(
+        covid_data['x_data'], covid_data['y_data'], y_base, covid_data['base_date'])
     if not log_result is None:
         peak_date_str = "Szigmoid inflexiós pont: " \
             "{} ± {:.2f} nap (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})".format(
@@ -213,7 +220,8 @@ def main():
         max_inf_str = ""
         print("Logistic curve is too bad fit for current data")
 
-    exp_result = fit_exponential_model(x_data, y_data, y_base)
+    exp_result = fit_exponential_model(
+        covid_data['x_data'], covid_data['y_data'], y_base)
     print(exp_result)
     daily_growth_str = ("Napi növekedés az exponenciális modell alapján:"
                         " {:.2f}% ± {:.2}%."
@@ -228,7 +236,13 @@ def main():
         exp_result["ln_daily_growth"], exp_result["x_shift"]))
 
     curve_data = create_curve_data(
-        x_data, y_data, y_base, base_date, log_result, exp_result)
+        covid_data['x_data'],
+        covid_data['y_data'],
+        y_base,
+        covid_data['base_date'],
+        log_result,
+        exp_result
+    )
 
     print("{:<15}{:<15}{:<15}{:<15}".format(
         "Date", "Actual", "Predicted log", "Predicted exp"))
@@ -256,9 +270,9 @@ def main():
     plt.ylabel(texts['y_axis_name'])
     plt.xlabel('Dátum')
     if log_result is None:
-        max_y = 2*max(y_data)
+        max_y = 2*max(covid_data['y_data'])
     else:
-        max_y = max(curve_data['logistic'] + y_data)
+        max_y = max(curve_data['logistic'] + covid_data['y_data'])
     plt.tight_layout(rect=[0.05, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
                    max_inf_str + "\n" +
@@ -268,8 +282,9 @@ def main():
     plt.axis([min(curve_data['date']), max(curve_data['date']), y_base, max_y])
     plt.legend()
     plt.grid()
-    plt.title("{} {}".format(texts['plot_title'], last_date))
-    file_name = 'plot-'+last_date+texts['plot_file_suffix']+'.png'
+    plt.title("{} {}".format(texts['plot_title'], covid_data['last_date_str']))
+    file_name = 'plot-'+covid_data['last_date_str'] + \
+        texts['plot_file_suffix']+'.png'
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
