@@ -145,12 +145,15 @@ def create_curve_data(x_data, y_data, y_base, base_date, log_result, exp_result)
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
                 for x in range(x_data[0], x_data[0] + days_to_simulate)]
+
     out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
+
     if not log_result is None:
         out_log = [get_logistic_model(y_base)(
             x, *log_result['popt']) for x in days]
     else:
         out_log = [float('nan')] * days_to_simulate
+
     out_exp = [get_exponential_model(y_base)(
         x, *exp_result['popt']) for x in days]
 
@@ -172,21 +175,25 @@ def main():
 
     if death_mode:
         print("Death mode")
-        file_name = 'covid_deaths.txt'
-        cases_axis_name = 'Összes halál'
-        y_axis_name = 'Összes halott'
-        element_marker = 'k+'
-        plot_file_suffix = '-deaths'
-        plot_title = 'COVID-19 görbeillesztés - összes halott'
+        texts = {
+            'file_name': 'covid_deaths.txt',
+            'cases_axis_name': 'Összes halál',
+            'y_axis_name': 'Összes halott',
+            'element_marker': 'k+',
+            'plot_file_suffix': '-deaths',
+            'plot_title': 'COVID-19 görbeillesztés - összes halott',
+        }
     else:
-        file_name = 'covid_data.txt'
-        cases_axis_name = 'Jelentett esetek'
-        y_axis_name = 'Összes eset'
-        element_marker = 'ro'
-        plot_file_suffix = ''
-        plot_title = 'COVID-19 görbeillesztés - összes eset'
+        texts = {
+            'file_name': 'covid_data.txt',
+            'cases_axis_name': 'Jelentett esetek',
+            'y_axis_name': 'Összes eset',
+            'element_marker': 'ro',
+            'plot_file_suffix': '',
+            'plot_title': 'COVID-19 görbeillesztés - összes eset',
+        }
 
-    x_data, y_data, base_date, last_date = parse_covid_data(file_name)
+    x_data, y_data, base_date, last_date = parse_covid_data(texts['file_name'])
     y_base = y_data[0]
 
     log_result = fit_logistic_model(x_data, y_data, y_base, base_date)
@@ -240,13 +247,13 @@ def main():
 
     plt.figure(figsize=[10.24, 7.68])
     plt.plot(curve_data['date'], curve_data['y'],
-             element_marker, label=cases_axis_name)
+             texts['element_marker'], label=texts['cases_axis_name'])
     if not log_result is None:
         plt.plot(curve_data['date'], curve_data['logistic'],
                  'g-', label='Szigmoid modell')
     plt.plot(curve_data['date'], curve_data['exponential'],
              'b-', label='Exponenciális modell')
-    plt.ylabel(y_axis_name)
+    plt.ylabel(texts['y_axis_name'])
     plt.xlabel('Dátum')
     if log_result is None:
         max_y = 2*max(y_data)
@@ -261,8 +268,8 @@ def main():
     plt.axis([min(curve_data['date']), max(curve_data['date']), y_base, max_y])
     plt.legend()
     plt.grid()
-    plt.title("{} {}".format(plot_title, last_date))
-    file_name = 'plot-'+last_date+plot_file_suffix+'.png'
+    plt.title("{} {}".format(texts['plot_title'], last_date))
+    file_name = 'plot-'+last_date+texts['plot_file_suffix']+'.png'
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
