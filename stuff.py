@@ -55,7 +55,8 @@ def get_logistic_model(y_base):
     "Generates logistic model function for the given Y base"
     def logistic_model(day, x_scale, peak, max_cases):
         "Logistic model formula"
-        return max_cases/(1+np.exp(-(day-peak)/x_scale)) + y_base
+        ksi = 1
+        return max_cases/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_base
     return logistic_model
 
 
@@ -76,7 +77,8 @@ def fit_logistic_model(x_data, y_data, base_date):
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
-            print("No sigmoid fit due to too large covariance.")
+            print("No sigmoid fit due to too large covariance. max_inf_error: {:.2f}".format(
+                max_inf_error))
             return None
 
         if max_inf_error > max_inf:
@@ -90,10 +92,10 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
             'final_date': final_date,
-            'peak_growth': model(popt[1]+1, popt[0], popt[1], popt[2])
-            - model(popt[1], popt[0], popt[1], popt[2]),
+            'peak_growth': model(popt[1]+1, *popt)
+                - model(popt[1], *popt),
             'tomorrow_growth':
-                model(x_data[-1]+1, popt[0], popt[1], popt[2]) - y_data[-1],
+                model(x_data[-1]+1, *popt) - y_data[-1],
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
@@ -278,7 +280,7 @@ def main():
             log_result['max_inf'] + covid_data['y_data'][0],
             log_result['max_inf_error'],
             log_result['final_date'].strftime(
-                            '%Y-%m-%d')
+                '%Y-%m-%d')
         )
         print(texts['max_inf_str'])
     else:
