@@ -274,7 +274,7 @@ def main():
                 '%Y-%m-%d'), log_result['peak_date_error'],
             log_result['peak_growth'], log_result['tomorrow_growth']
         )
-        texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f} ({})".format(
+        texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f} (Grafikon jobb széle: {})".format(
             log_result['max_inf'] + covid_data['y_data'][0],
             log_result['max_inf_error'],
             log_result['final_date'].strftime(
