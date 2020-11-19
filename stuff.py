@@ -70,6 +70,7 @@ def fit_logistic_model(x_data, y_data, base_date):
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
+        final_date = (base_date + 2*datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
@@ -88,6 +89,7 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak': popt[1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
+            'final_date': final_date,
             'peak_growth': model(popt[1]+1, popt[0], popt[1], popt[2])
             - model(popt[1], popt[0], popt[1], popt[2]),
             'tomorrow_growth':
@@ -155,9 +157,10 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
-                for x in range(x_data[0], x_data[0] + days_to_simulate)]
+                for x in days]
+    extra_days = days_to_simulate - len(y_data)
 
-    out_y = y_data + [float('nan')]*(days_to_simulate - len(y_data))
+    out_y = y_data + [float('nan')]*extra_days
 
     if log_result is not None:
         out_log = [get_logistic_model(y_data[0])(
@@ -271,9 +274,11 @@ def main():
                 '%Y-%m-%d'), log_result['peak_date_error'],
             log_result['peak_growth'], log_result['tomorrow_growth']
         )
-        texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f}".format(
+        texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f} ({})".format(
             log_result['max_inf'] + covid_data['y_data'][0],
-            log_result['max_inf_error']
+            log_result['max_inf_error'],
+            log_result['final_date'].strftime(
+                            '%Y-%m-%d')
         )
         print(texts['max_inf_str'])
     else:
