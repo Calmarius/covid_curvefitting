@@ -120,28 +120,33 @@ def get_exponential_model(y_base):
 
 def fit_exponential_model(x_data, y_data):
     "Fits exponential model to data"
-    sigma = [1] * len(y_data)
-    # sigma[-1] = 0.1
-    model = get_exponential_model(y_data[0])
-    popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
-    params = popt
-    errors = np.sqrt(np.diag(pcov))
 
-    return {
-        'ln_daily_growth': params[0],
-        'ln_daily_growth_error': errors[0],
-        'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
-        'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
-        'raw_daily_growth': np.exp(params[0]),
-        'daily_growth_error': np.sqrt(
-            (np.exp(errors[0]**2)-1) *
-            np.exp(2*params[0]+errors[0]**2)
-        ),
-        'x_shift': params[1],
-        'x_shift_error': errors[1],
-        'popt': popt,
-        'pcov': pcov
-    }
+    try:
+        sigma = [1] * len(y_data)
+        # sigma[-1] = 0.1
+        model = get_exponential_model(y_data[0])
+        popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
+        params = popt
+        errors = np.sqrt(np.diag(pcov))
+
+        return {
+            'ln_daily_growth': params[0],
+            'ln_daily_growth_error': errors[0],
+            'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
+            'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
+            'raw_daily_growth': np.exp(params[0]),
+            'daily_growth_error': np.sqrt(
+                (np.exp(errors[0]**2)-1) *
+                np.exp(2*params[0]+errors[0]**2)
+            ),
+            'x_shift': params[1],
+            'x_shift_error': errors[1],
+            'popt': popt,
+            'pcov': pcov
+        }
+    except RuntimeError as rte:
+        print("No exponential fit due to exception {}".format(rte))
+        return None
 
 
 def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
@@ -170,8 +175,11 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
     else:
         out_log = [float('nan')] * days_to_simulate
 
-    out_exp = [get_exponential_model(y_data[0])(
-        x, *exp_result['popt']) for x in days]
+    if exp_result is not None:        
+        out_exp = [get_exponential_model(y_data[0])(
+            x, *exp_result['popt']) for x in days]
+    else:
+        out_exp = [float('nan')] * days_to_simulate
 
     return {
         'date': out_date,
@@ -291,18 +299,21 @@ def main():
     exp_result = fit_exponential_model(
         covid_data['x_data'], covid_data['y_data'])
     print(exp_result)
-    texts['daily_growth_str'] = (
-        "Napi növekedés az exponenciális modell alapján:"
-        " {:.2f}% ± {:.2}%."
-        " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
-        exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
-        100, math.log(
-            2)/math.log(exp_result['daily_growth']),
-        exp_result['tomorrow_growth']
-    )
-    print(texts['daily_growth_str'])
-    print("ln daily growth: {}, x_shift: {}".format(
-        exp_result["ln_daily_growth"], exp_result["x_shift"]))
+    if exp_result is not None:
+        texts['daily_growth_str'] = (
+            "Napi növekedés az exponenciális modell alapján:"
+            " {:.2f}% ± {:.2}%."
+            " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
+            exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
+            100, math.log(
+                2)/math.log(exp_result['daily_growth']),
+            exp_result['tomorrow_growth']
+        )
+        print(texts['daily_growth_str'])
+        print("ln daily growth: {}, x_shift: {}".format(
+            exp_result["ln_daily_growth"], exp_result["x_shift"]))
+    else:
+        texts['daily_growth_str'] = "Exponenciális modell nem illeszkedik az adatokra"
 
     curve_data = create_curve_data(
         covid_data['x_data'],
