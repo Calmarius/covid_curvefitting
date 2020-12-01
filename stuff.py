@@ -125,6 +125,11 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         model = get_gen_logistic_model(y_data[0])
         popt_s, _ = curve_fit(get_logistic_model(y_data[0]), x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
+
+        if popt_s[1] > x_data[-1]:
+            print("No generic logistic fit: inflection is in the future")
+            return None
+
         popt, pcov = curve_fit(model, x_data, y_data,
                                p0=popt_s.tolist() + [1], sigma=sigma)
 
