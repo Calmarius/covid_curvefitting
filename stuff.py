@@ -64,6 +64,9 @@ def get_gen_logistic_model(y_base):
     "Generates general logistic model function for the given Y base"
     def logistic_model(day, x_scale, peak, max_cases, ksi):
         "General logistic model formula"
+
+        if not math.isfinite(ksi):
+            raise RuntimeError("ksi is invalid. Value = {}".format(ksi))
         return max_cases/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_base
     return logistic_model
 
@@ -154,7 +157,6 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         if popt[1] > x_data[-1]:
             print("No generic logistic fit: inflection is in the future")
             return None
-
 
         return {
             'peak': popt[1],
