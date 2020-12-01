@@ -82,7 +82,7 @@ def fit_logistic_model(x_data, y_data, base_date):
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        final_date = (base_date + 2*datetime.timedelta(days=popt[1]))
+        final_date = (base_date + datetime.timedelta(days=max(2*popt[1],x_data[-1])))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
@@ -138,7 +138,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
 
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        final_date = (base_date + 2*datetime.timedelta(days=popt[1]))
+        final_date = (base_date + datetime.timedelta(days=max(2*popt[1],x_data[-1])))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
