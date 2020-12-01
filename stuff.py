@@ -151,6 +151,11 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
                 "maximum is larger than the maximum itself.")
             return None
 
+        if popt[1] > x_data[-1]:
+            print("No generic logistic fit: inflection is in the future")
+            return None
+
+
         return {
             'peak': popt[1],
             'peak_date': peak_date,
