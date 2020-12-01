@@ -60,6 +60,14 @@ def get_logistic_model(y_base):
     return logistic_model
 
 
+def get_gen_logistic_model(y_base):
+    "Generates general logistic model function for the given Y base"
+    def logistic_model(day, x_scale, peak, max_cases, ksi):
+        "General logistic model formula"
+        return max_cases/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_base
+    return logistic_model
+
+
 def fit_logistic_model(x_data, y_data, base_date):
     "Fits data into logistic curve"
 
@@ -93,7 +101,58 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak_date_error': peak_date_error,
             'final_date': final_date,
             'peak_growth': model(popt[1]+1, *popt)
-                - model(popt[1], *popt),
+            - model(popt[1], *popt),
+            'tomorrow_growth':
+                model(x_data[-1]+1, *popt) - y_data[-1],
+            'max_inf': max_inf,
+            'max_inf_error': max_inf_error,
+            'x_scale': popt[0],
+            'x_scale_error': errors[0],
+            'popt': popt,
+            'pcov': pcov
+        }
+    except RuntimeError as rte:
+        print("No sigmoid fit due to exception: {}".format(rte))
+        return None
+
+
+def fit_gen_logistic_model(x_data, y_data, base_date):
+    "Fits data into general logistic curve"
+
+    try:
+        sigma = [1] * len(y_data)
+        # sigma[-1] = 0.1
+        model = get_gen_logistic_model(y_data[0])
+        popt_s, _ = curve_fit(get_logistic_model(y_data[0]), x_data, y_data, p0=[
+            2, 60, 100000], sigma=sigma)
+        popt, pcov = curve_fit(model, x_data, y_data,
+                               p0=popt_s.tolist() + [1], sigma=sigma)
+
+        errors = np.sqrt(np.diag(pcov))
+        peak_date = (base_date + datetime.timedelta(days=popt[1]))
+        final_date = (base_date + 2*datetime.timedelta(days=popt[1]))
+        peak_date_error = errors[1]
+        max_inf = popt[2]
+        max_inf_error = errors[2]
+
+        if peak_date_error > 1e7 or max_inf_error > 1e7:
+            print("No generic logistic fit due to too large covariance. max_inf_error: {:.2f}".format(
+                max_inf_error))
+            return None
+
+        if max_inf_error > max_inf:
+            print(
+                "No sigmoid fit because the uncertainty of the "
+                "maximum is larger than the maximum itself.")
+            return None
+
+        return {
+            'peak': popt[1],
+            'peak_date': peak_date,
+            'peak_date_error': peak_date_error,
+            'final_date': final_date,
+            'peak_growth': model(popt[1]+1, *popt)
+            - model(popt[1], *popt),
             'tomorrow_growth':
                 model(x_data[-1]+1, *popt) - y_data[-1],
             'max_inf': max_inf,
@@ -149,7 +208,7 @@ def fit_exponential_model(x_data, y_data):
         return None
 
 
-def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
+def create_curve_data(x_data, y_data, base_date, log_result, gen_log_result, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
@@ -175,7 +234,13 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
     else:
         out_log = [float('nan')] * days_to_simulate
 
-    if exp_result is not None:        
+    if gen_log_result is not None:
+        out_genlog = [get_gen_logistic_model(y_data[0])(
+            x, *gen_log_result['popt']) for x in days]
+    else:
+        out_genlog = [float('nan')] * days_to_simulate
+
+    if exp_result is not None:
         out_exp = [get_exponential_model(y_data[0])(
             x, *exp_result['popt']) for x in days]
     else:
@@ -185,6 +250,7 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
         'date': out_date,
         'y': out_y,
         'logistic': out_log,
+        'general_logistic': out_genlog,
         'exponential': out_exp
     }
 
@@ -192,13 +258,14 @@ def create_curve_data(x_data, y_data, base_date, log_result, exp_result):
 def print_curves(curve_data):
     "Prints the curve data into terminal."
 
-    print("{:<15}{:<15}{:<15}{:<15}".format(
-        "Date", "Actual", "Predicted log", "Predicted exp"))
+    print("{:<15}{:<15}{:<15}{:<15}{:<15}".format(
+        "Date", "Actual", "Predicted log", "Predicted gen. log", "Predicted exp"))
     for i in range(0, len(curve_data['date'])):
-        print("{:<15}{:>15}{:>15.2f}{:>15.2f}".format(
+        print("{:<15}{:>15}{:>15.2f}{:>15.2f}{:>15.2f}".format(
             curve_data['date'][i].strftime('%Y-%m-%d'),
             curve_data['y'][i],
             curve_data['logistic'][i],
+            curve_data['general_logistic'][i],
             curve_data['exponential'][i]
         ))
 
@@ -216,7 +283,11 @@ def save_plot(curve_data, covid_data, log_result, texts):
              texts['element_marker'], label=texts['cases_axis_name'])
     if log_result is not None:
         plt.plot(curve_data['date'], curve_data['logistic'],
-                 'g-', label='Szigmoid modell')
+                 'g-', label='Szimmetrikus szigmoid modell')
+    if curve_data['general_logistic'] is not None:
+        plt.plot(curve_data['date'], curve_data['general_logistic'],
+                 'r-', label='Általános szigmoid modell')
+
     plt.plot(curve_data['date'], curve_data['exponential'],
              'b-', label='Exponenciális modell')
     plt.ylabel(texts['y_axis_name'])
@@ -296,6 +367,9 @@ def main():
         texts['max_inf_str'] = ""
         print("Logistic curve is too bad fit for current data")
 
+    gen_log_result = fit_gen_logistic_model(
+        covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
+
     exp_result = fit_exponential_model(
         covid_data['x_data'], covid_data['y_data'])
     print(exp_result)
@@ -320,6 +394,7 @@ def main():
         covid_data['y_data'],
         covid_data['base_date'],
         log_result,
+        gen_log_result,
         exp_result
     )
 
