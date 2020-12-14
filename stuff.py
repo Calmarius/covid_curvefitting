@@ -293,8 +293,9 @@ def save_plot(curve_data, covid_data, texts):
         plt.plot(curve_data['date'], curve_data['general_logistic'],
                  'r-', label='Általános szigmoid modell')
 
-    plt.plot(curve_data['date'], curve_data['exponential'],
-             'b-', label='Exponenciális modell')
+    if curve_data['exponential'] is not None:
+        plt.plot(curve_data['date'], curve_data['exponential'],
+                 'b-', label='Exponenciális modell')
     plt.ylabel(texts['y_axis_name'])
     plt.xlabel('Dátum')
     max_y = None
