@@ -78,8 +78,10 @@ def fit_logistic_model(x_data, y_data, base_date):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         model = get_logistic_model(y_data[0])
-        popt, pcov = curve_fit(model, x_data, y_data, p0=[
+        result = curve_fit(model, x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
+        popt = result[0]
+        pcov = result[1]
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
         final_date = (
@@ -128,23 +130,25 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         model = get_gen_logistic_model(y_data[0])
-        popt_s, _ = curve_fit(get_logistic_model(y_data[0]), x_data, y_data, p0=[
+        result = curve_fit(get_logistic_model(y_data[0]), x_data, y_data, p0=[
             2, 60, 100000], sigma=sigma)
+        popt_s = result[0]
 
-        popt, pcov = curve_fit(model, x_data, y_data,
-                               p0=popt_s.tolist() + [1], sigma=sigma)
+        result = curve_fit(model, x_data, y_data,
+                           p0=popt_s.tolist() + [1], sigma=sigma)
+        popt = result[0]
+        pcov = result[1]
 
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        final_date = (
-            base_date + datetime.timedelta(days=max(2*popt[1], x_data[-1])))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
-            print("No generic logistic fit due to too large covariance. max_inf_error: {:.2f}".format(
-                max_inf_error))
+            print("No generic logistic fit due to too large covariance. "
+                  "max_inf_error: {:.2f}".format(
+                      max_inf_error))
             return None
 
         if max_inf_error > max_inf:
@@ -157,7 +161,8 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
             'peak': popt[1],
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
-            'final_date': final_date,
+            'final_date': (
+                base_date + datetime.timedelta(days=max(2*popt[1], x_data[-1]))),
             'peak_growth': model(popt[1]+1, *popt)
             - model(popt[1], *popt),
             'tomorrow_growth':
@@ -192,7 +197,9 @@ def fit_exponential_model(x_data, y_data):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         model = get_exponential_model(y_data[0])
-        popt, pcov = curve_fit(model, x_data, y_data, sigma=sigma)
+        result = curve_fit(model, x_data, y_data, sigma=sigma)
+        popt = result[0]
+        pcov = result[1]
         params = popt
         errors = np.sqrt(np.diag(pcov))
 
@@ -217,7 +224,7 @@ def fit_exponential_model(x_data, y_data):
         return None
 
 
-def create_curve_data(x_data, y_data, base_date, sym_log_result, gen_log_result, exp_result):
+def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
@@ -226,9 +233,10 @@ def create_curve_data(x_data, y_data, base_date, sym_log_result, gen_log_result,
     days_to_simulate = None
 
     # Choose the logistic curve with higher asymptote
-    choosen_log_result = sym_log_result
-    if (gen_log_result is not None) and (sym_log_result is not None) and (gen_log_result['max_inf'] > sym_log_result["max_inf"]):
-        choosen_log_result = gen_log_result
+    choosen_log_result = log_results['symmetric']
+    if (log_results['general'] is not None) and (log_results['symmetric'] is not None) and (
+            log_results['general']['max_inf'] > log_results['symmetric']["max_inf"]):
+        choosen_log_result = log_results['general']
 
     # Choose range such that inflection is in the middle
     if choosen_log_result is not None:
@@ -251,15 +259,15 @@ def create_curve_data(x_data, y_data, base_date, sym_log_result, gen_log_result,
 
     out_y = y_data + [float('nan')]*extra_days
 
-    if sym_log_result is not None:
+    if log_results['symmetric'] is not None:
         out_log = [get_logistic_model(y_data[0])(
-            x, *sym_log_result['popt']) for x in days]
+            x, *log_results['symmetric']['popt']) for x in days]
     else:
         out_log = None
 
-    if gen_log_result is not None:
+    if log_results['general'] is not None:
         out_genlog = [get_gen_logistic_model(y_data[0])(
-            x, *gen_log_result['popt']) for x in days]
+            x, *log_results['general']['popt']) for x in days]
     else:
         out_genlog = None
 
@@ -289,8 +297,8 @@ def print_curves(curve_data):
             curve_data['y'][i],
             curve_data['logistic'][i] if curve_data['logistic'] is not None else float(
                 "nan"),
-            curve_data['general_logistic'][i] if curve_data['general_logistic'] is not None else float(
-                "nan"),
+            curve_data['general_logistic'][i]
+            if curve_data['general_logistic'] is not None else float("nan"),
             curve_data['exponential'][i] if curve_data['exponential'] is not None else float(
                 "nan")
         ))
@@ -381,7 +389,8 @@ def main():
         covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
 
     log_result = sym_log_result
-    if (gen_log_result is not None) and (sym_log_result is not None) and (gen_log_result['max_inf'] > sym_log_result["max_inf"]):
+    if (gen_log_result is not None) and (sym_log_result is not None) and (
+            gen_log_result['max_inf'] > sym_log_result["max_inf"]):
         log_result = gen_log_result
 
     if log_result is not None:
@@ -426,12 +435,16 @@ def main():
     else:
         texts['daily_growth_str'] = "Exponenciális modell nem illeszkedik az adatokra"
 
+    log_results = {
+        'symmetric': sym_log_result,
+        'general': gen_log_result
+    }
+
     curve_data = create_curve_data(
         covid_data['x_data'],
         covid_data['y_data'],
         covid_data['base_date'],
-        sym_log_result,
-        gen_log_result,
+        log_results,
         exp_result
     )
 
