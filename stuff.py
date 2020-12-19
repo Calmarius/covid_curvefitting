@@ -82,7 +82,8 @@ def fit_logistic_model(x_data, y_data, base_date):
             2, 60, 100000], sigma=sigma)
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        final_date = (base_date + datetime.timedelta(days=max(2*popt[1],x_data[-1])))
+        final_date = (
+            base_date + datetime.timedelta(days=max(2*popt[1], x_data[-1])))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
@@ -112,7 +113,8 @@ def fit_logistic_model(x_data, y_data, base_date):
             'x_scale': popt[0],
             'x_scale_error': errors[0],
             'popt': popt,
-            'pcov': pcov
+            'pcov': pcov,
+            'name': 'Szimmetrikus szigmoid'
         }
     except RuntimeError as rte:
         print("No sigmoid fit due to exception: {}".format(rte))
@@ -134,7 +136,8 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
 
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        final_date = (base_date + datetime.timedelta(days=max(2*popt[1],x_data[-1])))
+        final_date = (
+            base_date + datetime.timedelta(days=max(2*popt[1], x_data[-1])))
         peak_date_error = errors[1]
         max_inf = popt[2]
         max_inf_error = errors[2]
@@ -164,7 +167,8 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
             'x_scale': popt[0],
             'x_scale_error': errors[0],
             'popt': popt,
-            'pcov': pcov
+            'pcov': pcov,
+            'name': 'Általános szigmoid'
         }
     except RuntimeError as rte:
         print("No generic logistic fit due to exception: {}".format(rte))
@@ -205,26 +209,40 @@ def fit_exponential_model(x_data, y_data):
             'x_shift': params[1],
             'x_shift_error': errors[1],
             'popt': popt,
-            'pcov': pcov
+            'pcov': pcov,
+            'name': 'Exponenciális'
         }
     except RuntimeError as rte:
         print("No exponential fit due to exception {}".format(rte))
         return None
 
 
-def create_curve_data(x_data, y_data, base_date, log_result, gen_log_result, exp_result):
+def create_curve_data(x_data, y_data, base_date, sym_log_result, gen_log_result, exp_result):
     """
     Creates the curves to be used when plotting data based
     on the calculated results.
     """
 
     days_to_simulate = None
-    if log_result is not None:
-        days_to_simulate = max(2*(log_result['peak_date'] - base_date).days, days_to_simulate or 0)
-    if gen_log_result is not None:
-        days_to_simulate = max(2*(gen_log_result['peak_date'] - base_date).days, days_to_simulate or 0)
 
-    days_to_simulate = max(2*(x_data[-1] - x_data[0] + 1), x_data[-1] - x_data[0] + 1, days_to_simulate or 0)
+    # Choose the logistic curve with higher asymptote
+    choosen_log_result = sym_log_result
+    if (gen_log_result is not None) and (sym_log_result is not None) and (gen_log_result['max_inf'] > sym_log_result["max_inf"]):
+        choosen_log_result = gen_log_result
+
+    # Choose range such that inflection is in the middle
+    if choosen_log_result is not None:
+        days_to_simulate = max(
+            2*(choosen_log_result['peak_date'] - base_date).days, days_to_simulate or 0)
+
+    # If we don't have a logistic curve (so no days yet), but have exponential
+    # then just simulate twice as many days as we have so far:
+    if (days_to_simulate is None) and exp_result is not None:
+        days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
+
+    # If we already have days to simulate make sure all data is on the chart.
+    if choosen_log_result is not None:
+        days_to_simulate = max(x_data[-1] - x_data[0] + 1, days_to_simulate)
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
@@ -233,9 +251,9 @@ def create_curve_data(x_data, y_data, base_date, log_result, gen_log_result, exp
 
     out_y = y_data + [float('nan')]*extra_days
 
-    if log_result is not None:
+    if sym_log_result is not None:
         out_log = [get_logistic_model(y_data[0])(
-            x, *log_result['popt']) for x in days]
+            x, *sym_log_result['popt']) for x in days]
     else:
         out_log = None
 
@@ -269,9 +287,12 @@ def print_curves(curve_data):
         print("{:<15}{:>15}{:>15.2f}{:>15.2f}{:>15.2f}".format(
             curve_data['date'][i].strftime('%Y-%m-%d'),
             curve_data['y'][i],
-            curve_data['logistic'][i] if curve_data['logistic'] is not None else float("nan"),
-            curve_data['general_logistic'][i] if curve_data['general_logistic'] is not None else float("nan"),
-            curve_data['exponential'][i] if curve_data['exponential'] is not None else float("nan")
+            curve_data['logistic'][i] if curve_data['logistic'] is not None else float(
+                "nan"),
+            curve_data['general_logistic'][i] if curve_data['general_logistic'] is not None else float(
+                "nan"),
+            curve_data['exponential'][i] if curve_data['exponential'] is not None else float(
+                "nan")
         ))
 
 
@@ -300,9 +321,11 @@ def save_plot(curve_data, covid_data, texts):
     plt.xlabel('Dátum')
     max_y = None
     if curve_data['logistic'] is not None:
-        max_y = max(curve_data['logistic'] + covid_data['y_data'] + ([max_y] if max_y else []))
+        max_y = max(curve_data['logistic'] +
+                    covid_data['y_data'] + ([max_y] if max_y else []))
     if curve_data['general_logistic'] is not None:
-        max_y = max(curve_data['general_logistic'] + covid_data['y_data'] + ([max_y] if max_y else []))
+        max_y = max(curve_data['general_logistic'] +
+                    covid_data['y_data'] + ([max_y] if max_y else []))
     max_y = max_y or 2*max(covid_data['y_data'])
     plt.tight_layout(rect=[0.05, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
@@ -361,17 +384,18 @@ def main():
     if (gen_log_result is not None) and (sym_log_result is not None) and (gen_log_result['max_inf'] > sym_log_result["max_inf"]):
         log_result = gen_log_result
 
-
     if log_result is not None:
         texts['peak_date_str'] = (
-            "Szigmoid inflexiós pont: "
+            "{} inflexiós pont: "
             "{} ± {:.2f} nap"
             " (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})").format(
+            log_result['name'],
             log_result['peak_date'].strftime(
                 '%Y-%m-%d'), log_result['peak_date_error'],
             log_result['peak_growth'], log_result['tomorrow_growth']
         )
-        texts['max_inf_str'] = "Szigmoid maximum: {:.2f} ± {:.2f} (Grafikon jobb széle: {})".format(
+        texts['max_inf_str'] = "{} maximum: {:.2f} ± {:.2f} (2*y(x_inf) - y(0)): {})".format(
+            log_result['name'],
             log_result['max_inf'] + covid_data['y_data'][0],
             log_result['max_inf_error'],
             log_result['final_date'].strftime(
