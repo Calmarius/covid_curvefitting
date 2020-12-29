@@ -411,6 +411,7 @@ def main():
                 '%Y-%m-%d')
         )
         print(texts['max_inf_str'])
+        print(texts['peak_date_str'])
     else:
         texts['peak_date_str'] = "Szigmoid modell nem illeszkedik az adatokra."
         texts['max_inf_str'] = ""
