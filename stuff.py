@@ -108,8 +108,10 @@ def fit_logistic_model(x_data, y_data, base_date):
             'final_date': final_date,
             'peak_growth': model(popt[1]+1, *popt)
             - model(popt[1], *popt),
-            'tomorrow_growth':
+            'tomorrow_diff':
                 model(x_data[-1]+1, *popt) - y_data[-1],
+            'tomorrow_growth':
+                model(x_data[-1], *popt) - model(x_data[-1]-1, *popt),
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
@@ -165,8 +167,10 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
                 base_date + datetime.timedelta(days=max(2*popt[1], x_data[-1]))),
             'peak_growth': model(popt[1]+1, *popt)
             - model(popt[1], *popt),
-            'tomorrow_growth':
+            'tomorrow_diff':
                 model(x_data[-1]+1, *popt) - y_data[-1],
+            'tomorrow_growth':
+                model(x_data[-1], *popt) - model(x_data[-1]-1, *popt),
             'max_inf': max_inf,
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
@@ -207,7 +211,9 @@ def fit_exponential_model(x_data, y_data):
             'ln_daily_growth': params[0],
             'ln_daily_growth_error': errors[0],
             'daily_growth': np.exp(params[0] + errors[0]**2 / 2),
-            'tomorrow_growth': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
+            'tomorrow_diff': model(x_data[-1]+1, popt[0], popt[1]) - y_data[-1],
+            'tomorrow_growth':
+                model(x_data[-1], *popt) - model(x_data[-1]-1, *popt),
             'raw_daily_growth': np.exp(params[0]),
             'daily_growth_error': np.sqrt(
                 (np.exp(errors[0]**2)-1) *
@@ -397,11 +403,13 @@ def main():
         texts['peak_date_str'] = (
             "{} inflexiós pont: "
             "{} ± {:.2f} nap"
-            " (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f})").format(
+            " (Max meredekség: {:.2f}, f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
             log_result['name'],
             log_result['peak_date'].strftime(
                 '%Y-%m-%d'), log_result['peak_date_error'],
-            log_result['peak_growth'], log_result['tomorrow_growth']
+            log_result['peak_growth'],
+            log_result['tomorrow_diff'],
+            log_result['tomorrow_growth']
         )
         texts['max_inf_str'] = "{} maximum: {:.2f} ± {:.2f} (2*y(x_inf) - y(0)): {})".format(
             log_result['name'],
@@ -424,11 +432,12 @@ def main():
         texts['daily_growth_str'] = (
             "Napi növekedés az exponenciális modell alapján:"
             " {:.2f}% ± {:.2}%."
-            " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f})").format(
+            " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
             exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
             100, math.log(
                 2)/math.log(exp_result['daily_growth']),
-            exp_result['tomorrow_growth']
+            exp_result['tomorrow_diff'],
+            log_result['tomorrow_growth']
         )
         print(texts['daily_growth_str'])
         print("ln daily growth: {}, x_shift: {}".format(
