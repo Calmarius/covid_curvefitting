@@ -450,7 +450,7 @@ def main():
             100, math.log(
                 2)/math.log(exp_result['daily_growth']),
             exp_result['tomorrow_diff'],
-            log_result['tomorrow_growth']
+            exp_result['tomorrow_growth']
         )
         print(texts['daily_growth_str'])
         print("ln daily growth: {}, x_shift: {}".format(
