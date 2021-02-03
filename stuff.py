@@ -423,7 +423,7 @@ def main():
             log_result['tomorrow_diff'],
             log_result['tomorrow_growth']
         )
-        texts['max_inf_str'] = "{} maximum: {:.2f} ± {:.2f} (dy/dx < {:.2f} helye): {})".format(
+        texts['max_inf_str'] = "{} maximum: {:.2f} ± {:.2f} (df/dx < {:.2f} helye): {})".format(
             log_result['name'],
             log_result['max_inf'] + covid_data['y_data'][0],
             log_result['max_inf_error'],
