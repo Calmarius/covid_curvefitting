@@ -30,6 +30,7 @@ def add_new_data(filename, new_data):
                                   new_number, new_data)
     with open(filename, "a") as file:
         file.write(new_line)
+    print("Line added: {}".format(new_line))
 
 
 def main():
