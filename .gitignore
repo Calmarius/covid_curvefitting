@@ -1,3 +1,4 @@
 plot*.png
 publish*.sh
 .vscode/
+__pycache__/
