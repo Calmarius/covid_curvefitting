@@ -18,7 +18,7 @@ if 1 < 2:
 
 
 TODAY = datetime.datetime.now().strftime('%Y-%m-%d')
-END_PEAK_GROWTH_RATE =0.001
+END_PEAK_GROWTH_RATE = 0.001
 
 
 def parse_covid_data(filename):
@@ -52,23 +52,25 @@ def parse_covid_data(filename):
     }
 
 
-def get_gen_logistic_model(y_base):
+def get_gen_logistic_model():
     "Generates general logistic model function for the given Y base"
-    def logistic_model(day, x_scale, peak, max_cases, ksi):
+    # I have no idea how to avoid too many arguments warnings here...
+    # pylint: disable=R0913
+    def logistic_model(day, x_scale, peak, height, y_floor, ksi):
         "General logistic model formula"
 
         if not math.isfinite(ksi):
             raise RuntimeError("ksi is invalid. Value = {}".format(ksi))
-        return max_cases/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_base
+        return height/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_floor
     return logistic_model
 
 
-def get_logistic_model(y_base):
+def get_logistic_model():
     "Generates logistic model function for the given Y base"
-    def logistic_model(day, x_scale, peak, max_cases):
+    def logistic_model(day, x_scale, peak, height, y_floor):
         "Logistic model formula"
         ksi = 1
-        return max_cases/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_base
+        return height/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_floor
     return logistic_model
 
 
@@ -77,9 +79,11 @@ def find_end_of_logistic(logresult, base_date):
 
     endpoint = logresult['peak']
     func = logresult['function']
-    while func(endpoint + 1, *logresult['popt']) - func(endpoint, *logresult['popt']) >= logresult['peak_growth']*END_PEAK_GROWTH_RATE:
+    while (func(endpoint + 1, *logresult['popt']) - func(endpoint, *logresult['popt']) >=
+           logresult['peak_growth']*END_PEAK_GROWTH_RATE):
         endpoint = endpoint + 1
     return base_date + datetime.timedelta(days=endpoint)
+
 
 def fit_logistic_model(x_data, y_data, base_date):
     "Fits data into logistic curve"
@@ -87,15 +91,15 @@ def fit_logistic_model(x_data, y_data, base_date):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_logistic_model(y_data[0])
+        model = get_logistic_model()
         result = curve_fit(model, x_data, y_data, p0=[
-            2, 60, 100000], sigma=sigma)
+            2, 60, 100000, y_data[0]], sigma=sigma)
         popt = result[0]
         pcov = result[1]
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
-        max_inf = popt[2]
+        max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
@@ -115,7 +119,7 @@ def fit_logistic_model(x_data, y_data, base_date):
             'peak_date': peak_date,
             'peak_date_error': peak_date_error,
             'peak_growth': model(popt[1]+1, *popt)
-                - model(popt[1], *popt),
+            - model(popt[1], *popt),
             'tomorrow_diff':
                 model(x_data[-1]+1, *popt) - y_data[-1],
             'tomorrow_growth':
@@ -124,6 +128,7 @@ def fit_logistic_model(x_data, y_data, base_date):
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
             'x_scale_error': errors[0],
+            'y_base': popt[3],
             'popt': popt,
             'pcov': pcov,
             'name': 'Szimmetrikus szigmoid'
@@ -139,22 +144,20 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
     "Fits data into general logistic curve"
 
     try:
-        sigma = [1] * len(y_data)
-        # sigma[-1] = 0.1
-        model = get_gen_logistic_model(y_data[0])
-        result = curve_fit(get_logistic_model(y_data[0]), x_data, y_data, p0=[
-            2, 60, 100000], sigma=sigma)
+        model = get_gen_logistic_model()
+        result = curve_fit(get_logistic_model(), x_data, y_data, p0=[
+            2, 60, 100000, y_data[0]])
         popt_s = result[0]
 
         result = curve_fit(model, x_data, y_data,
-                           p0=popt_s.tolist() + [1], sigma=sigma)
+                           p0=popt_s.tolist() + [1])
         popt = result[0]
         pcov = result[1]
 
         errors = np.sqrt(np.diag(pcov))
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
-        max_inf = popt[2]
+        max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
@@ -184,6 +187,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
             'max_inf_error': max_inf_error,
             'x_scale': popt[0],
             'x_scale_error': errors[0],
+            'y_base': popt[3],
             'popt': popt,
             'pcov': pcov,
             'name': 'Általános szigmoid'
@@ -251,11 +255,9 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
 
     # Choose the logistic curve with higher asymptote
     choosen_log_result = log_results['symmetric']
-    model = get_logistic_model(y_data[0])
     if (log_results['general'] is not None) and (log_results['symmetric'] is not None) and (
             log_results['general']['max_inf'] > log_results['symmetric']["max_inf"]):
         choosen_log_result = log_results['general']
-        model = get_gen_logistic_model(y_data[0])
 
     # Choose range such that the end is at he position where the slope of the graph is less than 1.
     if choosen_log_result is not None:
@@ -278,13 +280,13 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     out_y = y_data + [float('nan')]*extra_days
 
     if log_results['symmetric'] is not None:
-        out_log = [get_logistic_model(y_data[0])(
+        out_log = [get_logistic_model()(
             x, *log_results['symmetric']['popt']) for x in days]
     else:
         out_log = None
 
     if log_results['general'] is not None:
-        out_genlog = [get_gen_logistic_model(y_data[0])(
+        out_genlog = [get_gen_logistic_model()(
             x, *log_results['general']['popt']) for x in days]
     else:
         out_genlog = None
@@ -405,6 +407,13 @@ def main():
         covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
     gen_log_result = fit_gen_logistic_model(
         covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
+    if sym_log_result is not None:
+        print("Symmetric log result popt: {}".format(
+            [float('{:.2f}'.format(x)) for x in sym_log_result['popt']]))
+
+    if gen_log_result is not None:
+        print("Generic log result popt: {}".format(
+            [float('{:.2f}'.format(x)) for x in gen_log_result['popt']]))
 
     log_result = sym_log_result
     if (gen_log_result is not None) and (sym_log_result is not None) and (
@@ -425,7 +434,7 @@ def main():
         )
         texts['max_inf_str'] = "{} maximum: {:.2f} ± {:.2f} (df/dx < {:.2f} helye): {})".format(
             log_result['name'],
-            log_result['max_inf'] + covid_data['y_data'][0],
+            log_result['max_inf'],
             log_result['max_inf_error'],
             log_result['peak_growth'] * END_PEAK_GROWTH_RATE,
             log_result['final_date'].strftime(
