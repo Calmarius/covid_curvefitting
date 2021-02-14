@@ -97,7 +97,6 @@ def fit_logistic_model(x_data, y_data, base_date):
         popt = result[0]
         pcov = result[1]
         errors = np.sqrt(np.diag(pcov))
-        peak_date = (base_date + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
         max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
@@ -113,6 +112,7 @@ def fit_logistic_model(x_data, y_data, base_date):
                 "maximum is larger than the maximum itself.")
             return None
 
+        peak_date = (base_date + datetime.timedelta(days=popt[1]))
         res = {
             'function': model,
             'peak': popt[1],
@@ -155,7 +155,6 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         pcov = result[1]
 
         errors = np.sqrt(np.diag(pcov))
-        peak_date = (base_date + datetime.timedelta(days=popt[1]))
         peak_date_error = errors[1]
         max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
@@ -172,6 +171,8 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
                 "maximum is larger than the maximum itself.")
             return None
 
+        peak_date = (base_date + datetime.timedelta(days=popt[1]))
+        
         res = {
             'function': model,
             'peak': popt[1],
