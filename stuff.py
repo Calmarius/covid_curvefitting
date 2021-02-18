@@ -217,8 +217,7 @@ def fit_exponential_model(x_data, y_data):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         model = get_exponential_model()
-        result = curve_fit(model, x_data, y_data, sigma=sigma)
-        print("result: {}", result[0])
+        result = curve_fit(model, x_data, y_data, sigma=sigma, p0 = [np.log(y_data[1]/y_data[0]), 0, y_data[0]])
         popt = result[0]
         pcov = result[1]
         params = popt
