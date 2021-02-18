@@ -217,7 +217,7 @@ def fit_exponential_model(x_data, y_data):
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
         model = get_exponential_model()
-        result = curve_fit(model, x_data, y_data, sigma=sigma, p0 = [np.log(y_data[1]/y_data[0]), 0, y_data[0]])
+        result = curve_fit(model, x_data, y_data, sigma=sigma, p0 = [np.log((y_data[-1] - y_data[0]) / (x_data[-1] - x_data[0])), 0, y_data[0]])
         popt = result[0]
         pcov = result[1]
         params = popt
@@ -252,7 +252,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     on the calculated results.
     """
 
-    days_to_simulate = None
+    days_to_simulate = len(y_data)
 
     # Choose the logistic curve with higher asymptote
     choosen_log_result = log_results['symmetric']
