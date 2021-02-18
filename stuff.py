@@ -252,7 +252,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     on the calculated results.
     """
 
-    days_to_simulate = len(y_data)
+    days_to_simulate = None
 
     # Choose the logistic curve with higher asymptote
     choosen_log_result = log_results['symmetric']
@@ -272,6 +272,9 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     # If we already have days to simulate make sure all data is on the chart.
     if choosen_log_result is not None:
         days_to_simulate = max(x_data[-1] - x_data[0] + 1, days_to_simulate)
+
+    if days_to_simulate is None:
+        days_to_simulate = len(y_data)
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
