@@ -200,13 +200,13 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         return None
 
 
-def get_exponential_model():
+def get_exponential_model(y_base):
     "Generates exponential model function for the given Y base"
 
-    def exponential_model(day, ln_daily_growth, x_shift, y_floor):
+    def exponential_model(day, ln_daily_growth, x_shift):
         "Exponential model formula"
 
-        return np.exp(ln_daily_growth*(day-x_shift)) + y_floor
+        return np.exp(ln_daily_growth*(day-x_shift)) + y_base
     return exponential_model
 
 
@@ -216,8 +216,8 @@ def fit_exponential_model(x_data, y_data):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_exponential_model()
-        result = curve_fit(model, x_data, y_data, sigma=sigma, p0 = [np.log((y_data[-1] - y_data[0]) / (x_data[-1] - x_data[0])), 0, y_data[0]])
+        model = get_exponential_model(y_data[0])
+        result = curve_fit(model, x_data, y_data, sigma=sigma)
         popt = result[0]
         pcov = result[1]
         params = popt
@@ -293,7 +293,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
         out_genlog = None
 
     if exp_result is not None:
-        out_exp = [get_exponential_model()(
+        out_exp = [get_exponential_model(y_data[0])(
             x, *exp_result['popt']) for x in days]
     else:
         out_exp = None
