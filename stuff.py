@@ -358,7 +358,7 @@ def save_plot(curve_data, covid_data, texts):
     if curve_data['general_logistic'] is not None:
         max_y = max(curve_data['general_logistic'] +
                     covid_data['y_data'] + ([max_y] if max_y else []))
-    max_y = max_y or 2*max(covid_data['y_data'])
+    max_y = max_y or 2*(covid_data['y_data'][-1] - covid_data['y_data'][0]) + covid_data['y_data'][0]
     plt.tight_layout(rect=[0.05, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
                    texts['max_inf_str'] + "\n" +
