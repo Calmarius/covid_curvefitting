@@ -98,7 +98,11 @@ def fit_logistic_model(x_data, y_data, base_date):
         pcov = result[1]
         errors = np.sqrt(np.diag(pcov))
         peak_date_error = errors[1]
-        max_inf = popt[2] + popt[3]
+        if popt[2] < 0:
+            print("Symmetric log: Reversal happened! The graph has negative height. The floor is the top!")
+            max_inf = popt[3]
+        else:            
+            max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
@@ -156,7 +160,11 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
 
         errors = np.sqrt(np.diag(pcov))
         peak_date_error = errors[1]
-        max_inf = popt[2] + popt[3]
+        if popt[2] < 0:
+            print("Generic log: Reversal happened! The graph has negative height. The floor is the top!")
+            max_inf = popt[3]
+        else:            
+            max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
         if peak_date_error > 1e7 or max_inf_error > 1e7:
