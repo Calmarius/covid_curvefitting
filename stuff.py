@@ -260,6 +260,8 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     on the calculated results.
     """
 
+    data_map = dict(zip(x_data, y_data))
+
     days_to_simulate = None
 
     # Choose the logistic curve with higher asymptote
@@ -289,7 +291,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
                 for x in days]
     extra_days = days_to_simulate - len(y_data)
 
-    out_y = y_data + [float('nan')]*extra_days
+    out_y = [data_map.get(x, float('nan')) for x in days]
 
     if log_results['symmetric'] is not None:
         out_log = [get_logistic_model()(
