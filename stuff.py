@@ -99,9 +99,11 @@ def fit_logistic_model(x_data, y_data, base_date):
         errors = np.sqrt(np.diag(pcov))
         peak_date_error = errors[1]
         if popt[2] < 0:
-            print("Symmetric log: Reversal happened! The graph has negative height. The floor is the top!")
+            print(
+                "Symmetric log: Reversal happened! "+
+                "The graph has negative height. The floor is the top!")
             max_inf = popt[3]
-        else:            
+        else:
             max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
@@ -161,9 +163,11 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         errors = np.sqrt(np.diag(pcov))
         peak_date_error = errors[1]
         if popt[2] < 0:
-            print("Generic log: Reversal happened! The graph has negative height. The floor is the top!")
+            print(
+                "Generic log: Reversal happened! "+
+                "The graph has negative height. The floor is the top!")
             max_inf = popt[3]
-        else:            
+        else:
             max_inf = popt[2] + popt[3]
         max_inf_error = errors[2]
 
@@ -180,7 +184,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
             return None
 
         peak_date = (base_date + datetime.timedelta(days=popt[1]))
-        
+
         res = {
             'function': model,
             'peak': popt[1],
@@ -289,7 +293,6 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
                 for x in days]
-    extra_days = days_to_simulate - len(y_data)
 
     out_y = [data_map.get(x, float('nan')) for x in days]
 
@@ -368,7 +371,9 @@ def save_plot(curve_data, covid_data, texts):
     if curve_data['general_logistic'] is not None:
         max_y = max(curve_data['general_logistic'] +
                     covid_data['y_data'] + ([max_y] if max_y else []))
-    max_y = max_y or 2*(covid_data['y_data'][-1] - covid_data['y_data'][0]) + covid_data['y_data'][0]
+    max_y = max_y or 2 * \
+        (covid_data['y_data'][-1] - covid_data['y_data'][0]) + \
+        covid_data['y_data'][0]
     plt.tight_layout(rect=[0.05, 0.1, 1, 0.9])
     plt.gcf().text(0.01, 0.01,
                    texts['max_inf_str'] + "\n" +
