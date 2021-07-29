@@ -56,21 +56,17 @@ def get_gen_logistic_model():
     "Generates general logistic model function for the given Y base"
     # I have no idea how to avoid too many arguments warnings here...
     # pylint: disable=R0913
-    def logistic_model(day, x_scale, peak, height, y_floor, ksi):
+    def log_model(day, x_scale, peak, height, y_floor, ksi):
         "General logistic model formula"
 
         if not math.isfinite(ksi):
             raise RuntimeError("ksi is invalid. Value = {}".format(ksi))
         return height/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_floor
-    return logistic_model
+    return log_model
 
-# TODO: Perhaps we don't need this getter.
-def get_logistic_model():
-    "Generates logistic model function for the given Y base"
-    def logistic_model(day, x_scale, peak, height, y_floor):
-        "Logistic model formula"
-        return height/pow(1+np.exp(-(day-peak)/x_scale), 1) + y_floor
-    return logistic_model
+def logistic_model(day, x_scale, peak, height, y_floor):
+    "Logistic model formula"
+    return height/pow(1+np.exp(-(day-peak)/x_scale), 1) + y_floor
 
 
 def find_end_of_logistic(logresult, base_date):
@@ -90,7 +86,7 @@ def fit_logistic_model(x_data, y_data, base_date):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_logistic_model()
+        model = logistic_model
         result = curve_fit(model, x_data, y_data, p0=[
             2, 60, 100000, y_data[0]], sigma=sigma)
         popt = result[0]
@@ -99,7 +95,7 @@ def fit_logistic_model(x_data, y_data, base_date):
         peak_date_error = errors[1]
         if popt[2] < 0:
             print(
-                "Symmetric log: Reversal happened! "+
+                "Symmetric log: Reversal happened! " +
                 "The graph has negative height. The floor is the top!")
             max_inf = popt[3]
         else:
@@ -150,7 +146,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
 
     try:
         model = get_gen_logistic_model()
-        result = curve_fit(get_logistic_model(), x_data, y_data, p0=[
+        result = curve_fit(logistic_model, x_data, y_data, p0=[
             2, 60, 100000, y_data[0]])
         popt_s = result[0]
 
@@ -163,7 +159,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         peak_date_error = errors[1]
         if popt[2] < 0:
             print(
-                "Generic log: Reversal happened! "+
+                "Generic log: Reversal happened! " +
                 "The graph has negative height. The floor is the top!")
             max_inf = popt[3]
         else:
@@ -210,35 +206,25 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         print("No generic logistic fit due to exception: {}".format(rte))
         return None
 
-# TODO: Perhaps we don't need this getter.
-def get_exponential_model():
-    "Generates exponential model function for the given Y base"
+def exponential_model(day, ln_daily_growth, x_shift, y_base):
+    "Exponential model formula"
 
-    def exponential_model(day, ln_daily_growth, x_shift, y_base):
-        "Exponential model formula"
+    return np.exp(ln_daily_growth*(day-x_shift)) + y_base
 
-        return np.exp(ln_daily_growth*(day-x_shift)) + y_base
-    return exponential_model
 
-def dialy_growth_ln():
-    "asdsasda"
-    # TODO: Docs.
-
-    return np.log(1.1)
+DAILY_GROWTH_GUESS = np.log(1.1)
 
 def compute_exponential_initial_guess(x_data, y_data):
     "asdassda"
 
-    a1 = x_data[0]
-    b1 = y_data[0]
-    a2 = x_data[-1]
-    b2 = y_data[-1]
-    g = np.log(1.1)
-    B = np.exp(dialy_growth_ln()*(a2-a1))
-    y = (b2-B*b1)/(1-B)
-    x = np.log(np.exp(dialy_growth_ln()*a1)/(b1-y))/g
+    a_data = [x_data[0], x_data[-1]]
+    b_data = [y_data[0], y_data[-1]]
 
-    return [x, y]
+    b_tmp = np.exp(DAILY_GROWTH_GUESS*(a_data[1]-a_data[0]))
+    y_coord = (b_data[1]-b_tmp*b_data[0])/(1-b_tmp)
+    x_coord = np.log(np.exp(DAILY_GROWTH_GUESS*a_data[0])/(b_data[0]-y_coord))/DAILY_GROWTH_GUESS
+
+    return [x_coord, y_coord]
 
 
 def fit_exponential_model(x_data, y_data):
@@ -247,17 +233,19 @@ def fit_exponential_model(x_data, y_data):
     try:
         sigma = [1] * len(y_data)
         # sigma[-1] = 0.1
-        model = get_exponential_model()
+        model = exponential_model
         initial_guess = compute_exponential_initial_guess(x_data, y_data)
         print("Initial exponential guess parameters: {}".format(initial_guess))
-        result = curve_fit(model, x_data, y_data, sigma=sigma, p0=[dialy_growth_ln(), initial_guess[0], initial_guess[1]])
+        result = curve_fit(model, x_data, y_data, sigma=sigma, p0=[
+                           DAILY_GROWTH_GUESS, initial_guess[0], initial_guess[1]])
         popt = result[0]
         pcov = result[1]
         params = popt
         errors = np.sqrt(np.diag(pcov))
 
         if errors[0] > 1e7 or errors[1] > 1e7 or errors[2] > 1e7:
-            print("No exponential fit due to too large corariance. Errors: {}".format(errors))
+            print(
+                "No exponential fit due to too large corariance. Errors: {}".format(errors))
             return None
 
         return {
@@ -322,7 +310,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
     out_y = [data_map.get(x, float('nan')) for x in days]
 
     if log_results['symmetric'] is not None:
-        out_log = [get_logistic_model()(
+        out_log = [logistic_model(
             x, *log_results['symmetric']['popt']) for x in days]
     else:
         out_log = None
@@ -334,7 +322,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
         out_genlog = None
 
     if exp_result is not None:
-        out_exp = [get_exponential_model()(
+        out_exp = [exponential_model(
             x, *exp_result['popt']) for x in days]
     else:
         out_exp = None
