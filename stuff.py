@@ -447,6 +447,8 @@ def main():
         print("Generic log result popt: {}".format(
             [float('{:.2f}'.format(x)) for x in gen_log_result['popt']]))
 
+        
+
     log_result = sym_log_result
     if (gen_log_result is not None) and (sym_log_result is not None) and (
             gen_log_result['max_inf'] > sym_log_result["max_inf"]):
@@ -483,6 +485,8 @@ def main():
         covid_data['x_data'], covid_data['y_data'])
     print(exp_result)
     if exp_result is not None:
+        print("Exp result popt: {}".format(
+            [float('{:.2f}'.format(x)) for x in exp_result['popt']]))
         texts['daily_growth_str'] = (
             "Napi növekedés az exponenciális modell alapján:"
             " {:.2f}% ± {:.2}%."
