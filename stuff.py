@@ -212,7 +212,7 @@ def exponential_model(day, ln_daily_growth, x_shift, y_base):
     return np.exp(ln_daily_growth*(day-x_shift)) + y_base
 
 
-DAILY_GROWTH_GUESS = np.log(1.1)
+DAILY_GROWTH_GUESS = np.log(1.05)
 
 def compute_exponential_initial_guess(x_data, y_data):
     "asdassda"
@@ -237,7 +237,7 @@ def fit_exponential_model(x_data, y_data):
         initial_guess = compute_exponential_initial_guess(x_data, y_data)
         print("Initial exponential guess parameters: {}".format(initial_guess))
         result = curve_fit(model, x_data, y_data, sigma=sigma, p0=[
-                           DAILY_GROWTH_GUESS, initial_guess[0], initial_guess[1]])
+                           DAILY_GROWTH_GUESS, initial_guess[0], initial_guess[1]], maxfev=1200)
         popt = result[0]
         pcov = result[1]
         params = popt
