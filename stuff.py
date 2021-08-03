@@ -212,7 +212,7 @@ def exponential_model(day, ln_daily_growth, x_shift, y_base):
     return np.exp(ln_daily_growth*(day-x_shift)) + y_base
 
 
-DAILY_GROWTH_GUESS = np.log(1.05)
+DAILY_GROWTH_GUESS = np.log(1.01)
 
 def compute_exponential_initial_guess(x_data, y_data):
     "asdassda"
@@ -293,15 +293,12 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
 
     # If we don't have a logistic curve (so no days yet), but have exponential
     # then just simulate twice as many days as we have so far:
-    if (days_to_simulate is None) and exp_result is not None:
+    if (days_to_simulate is None):
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
 
     # If we already have days to simulate make sure all data is on the chart.
     if choosen_log_result is not None:
         days_to_simulate = max(x_data[-1] - x_data[0] + 1, days_to_simulate)
-
-    if days_to_simulate is None:
-        days_to_simulate = len(y_data)
 
     days = range(x_data[0], x_data[0] + days_to_simulate)
     out_date = [base_date + datetime.timedelta(days=x)
@@ -490,10 +487,9 @@ def main():
         texts['daily_growth_str'] = (
             "Napi növekedés az exponenciális modell alapján:"
             " {:.2f}% ± {:.2}%."
-            " (Duplázódás: {:.2f} naponta, f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
+            " f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
             exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
-            100, math.log(
-                2)/math.log(exp_result['daily_growth']),
+            100, 
             exp_result['tomorrow_diff'],
             exp_result['tomorrow_growth']
         )
