@@ -212,7 +212,7 @@ def exponential_model(day, ln_daily_growth, x_shift, y_base):
     return np.exp(ln_daily_growth*(day-x_shift)) + y_base
 
 
-DAILY_GROWTH_GUESS = np.log(1.01)
+DAILY_GROWTH_GUESS = np.log(1.1)
 
 def compute_exponential_initial_guess(x_data, y_data):
     "asdassda"
