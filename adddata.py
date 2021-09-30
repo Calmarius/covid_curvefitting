@@ -47,7 +47,7 @@ def main():
 
     today_mode = False
 
-    if len(sys.argv) >= 3 and sys.argv[3] == '--today':
+    if len(sys.argv) > 3 and sys.argv[3] == '--today':
         today_mode = True
 
 
