@@ -486,10 +486,11 @@ def main():
             [float('{:.2f}'.format(x)) for x in exp_result['popt']]))
         texts['daily_growth_str'] = (
             "Napi növekedés az exponenciális modell alapján:"
-            " {:.2f}% ± {:.2}%."
+            " {:.2f}% ± {:.2f}%. Duplázódás: {:.2f} naponta."
             " f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
-            exp_result['daily_growth']*100-100, exp_result['daily_growth_error'] *
-            100, 
+            exp_result['daily_growth']*100-100,
+            exp_result['daily_growth_error'] * 100, 
+            np.log(2)/np.log(exp_result['daily_growth']),
             exp_result['tomorrow_diff'],
             exp_result['tomorrow_growth']
         )
