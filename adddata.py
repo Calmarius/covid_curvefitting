@@ -45,10 +45,10 @@ def main():
         print("Usage: {} <new cases> <new deaths>".format(sys.argv[0]))
         sys.exit(1)
 
-    today_mode = False
+    today_mode = True
 
-    if len(sys.argv) > 3 and sys.argv[3] == '--today':
-        today_mode = True
+    if len(sys.argv) > 3 and sys.argv[3] == '--nottoday':
+        today_mode = False
 
 
     new_cases = int(sys.argv[1])
