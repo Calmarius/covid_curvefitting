@@ -1,4 +1,5 @@
 plot*.png
+json*.json
 publish*.sh
 .vscode/
 __pycache__/

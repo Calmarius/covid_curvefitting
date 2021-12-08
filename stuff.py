@@ -4,6 +4,7 @@
 Quickly written curve fitting script for covid data.
 """
 
+import json
 import math
 import sys
 import datetime
@@ -293,7 +294,7 @@ def create_curve_data(x_data, y_data, base_date, log_results, exp_result):
 
     # If we don't have a logistic curve (so no days yet), but have exponential
     # then just simulate twice as many days as we have so far:
-    if (days_to_simulate is None):
+    if days_to_simulate is None:
         days_to_simulate = 2*(x_data[-1] - x_data[0] + 1)
 
     # If we already have days to simulate make sure all data is on the chart.
@@ -400,6 +401,33 @@ def save_plot(curve_data, covid_data, texts):
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
+def save_json(covid_data, exp_result, log_result, texts):
+    "Creates JSON report of the curves"
+
+    file_name = 'json-'+covid_data['last_date_str'] + \
+        texts['plot_file_suffix']+'.json'
+
+    json_dump = {'exp': {
+            'growth': exp_result['daily_growth']*100-100,
+            'duplication': np.log(2)/np.log(exp_result['daily_growth']),
+            'tomorrow_diff': exp_result['tomorrow_diff'],
+            'tomorrow_growth': exp_result['tomorrow_growth']
+        }, 'log': {
+            'name': log_result['name'],
+            'peak': log_result['peak_date'].strftime(
+                '%Y-%m-%d'),
+            'peak_growth': log_result['peak_growth'],
+            'tomorrow_diff': log_result['tomorrow_diff'],
+            'tomorrow_growth': log_result['tomorrow_growth'],
+            'top_of_curve': log_result['max_inf'],
+            'top_of_curve_date': log_result['final_date'].strftime(
+                '%Y-%m-%d'),
+            'growth_at_top': log_result['peak_growth'] * END_PEAK_GROWTH_RATE
+        } if log_result else None}
+
+    with open(file_name, 'w') as file:
+        json.dump(json_dump, file, indent="    ")
+
 
 def main():
     "Entry point"
@@ -444,8 +472,6 @@ def main():
         print("Generic log result popt: {}".format(
             [float('{:.2f}'.format(x)) for x in gen_log_result['popt']]))
 
-        
-
     log_result = sym_log_result
     if (gen_log_result is not None) and (sym_log_result is not None) and (
             gen_log_result['max_inf'] > sym_log_result["max_inf"]):
@@ -489,7 +515,7 @@ def main():
             " {:.2f}% ± {:.2f}%. Duplázódás: {:.2f} naponta."
             " f(x+1) - y(x) ≈ {:.2f}, f(x+1) - f(x) ≈ {:.2f})").format(
             exp_result['daily_growth']*100-100,
-            exp_result['daily_growth_error'] * 100, 
+            exp_result['daily_growth_error'] * 100,
             np.log(2)/np.log(exp_result['daily_growth']),
             exp_result['tomorrow_diff'],
             exp_result['tomorrow_growth']
@@ -516,6 +542,7 @@ def main():
     print_curves(curve_data)
 
     save_plot(curve_data, covid_data, texts)
+    save_json(covid_data, exp_result, log_result, texts)
 
 
 if __name__ == "__main__":
