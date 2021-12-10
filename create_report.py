@@ -60,35 +60,35 @@ def main():
         datediff = (today - peak_date).days
         print(f"{log_model['name']} modell:"  )
         print()
-        if datediff > 7:
+        if datediff >= 7:
             # We are in the post peak mode so we write the top of the curve and top date.
             post_peak = True
-            print(f"    - Görbe teteje: {fltfmt(log_model['top_of_curve'])}"+
+            print(f"- Görbe teteje: {fltfmt(log_model['top_of_curve'])}"+
                  f" ({diff_key('top_of_curve')})")
-            print(f"    - Görbe vége ({fltfmt(log_model['growth_at_top'], 2)}/nap helye):"+
+            print(f"- Görbe vége ({fltfmt(log_model['growth_at_top'], 2)}/nap helye):"+
                 f" {log_model['top_of_curve_date']}"+
                 f" ({diff_key('top_of_curve_date', 0, True)} nap)")
 
         # Pre-peak mode we don't write the top.
-        print(f"    - Inflexiós pont: {log_model['peak']} ({diff_key('peak', 0, True)} nap)")
-        print(f"    - Max meredekség: {fltfmt(log_model['peak_growth'],2)}/nap"+
+        print(f"- Inflexiós pont: {log_model['peak']} ({diff_key('peak', 0, True)} nap)")
+        print(f"- Max meredekség: {fltfmt(log_model['peak_growth'],2)}/nap"+
             f" ({diff_key('peak_growth', 2)}/nap)")
-        print("    - A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:"+
+        print("- A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:"+
             f" {fltfmt(log_model['tomorrow_diff'])} ({diff_key('tomorrow_diff')})")
-        print(f"    - Görbe meredeksége: {fltfmt(log_model['tomorrow_growth'],2)}/nap"+
+        print(f"- Görbe meredeksége: {fltfmt(log_model['tomorrow_growth'],2)}/nap"+
             f" ({diff_key('tomorrow_growth', 2)}/nap)")
         print()
 
     if not post_peak and exp_model is not None:
         print("Exponenciális modell: ")
         print("")
-        print(f"    - Napi növekedés: {fltfmt(exp_model['growth'],2)}%"+
+        print(f"- Napi növekedés: {fltfmt(exp_model['growth'],2)}%"+
             f" ({diff_key_exp('growth', 2)}%p)")
-        print(f"    - Duplázódás: {fltfmt(exp_model['duplication'],2)} naponta"+
+        print(f"- Duplázódás: {fltfmt(exp_model['duplication'],2)} naponta"+
             f" ({diff_key_exp('duplication', 2)})")
-        print("    - A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:"+
+        print("- A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:"+
             f" {fltfmt(exp_model['tomorrow_diff'])} ({diff_key_exp('tomorrow_diff')})")
-        print(f"    - Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap"+
+        print(f"- Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap"+
             f" ({diff_key_exp('tomorrow_growth', 2)}/nap)")
 
 
