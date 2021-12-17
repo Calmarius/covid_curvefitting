@@ -35,13 +35,13 @@ def main():
     if len(sys.argv) <= 2:
         print(f"Usage {sys.argv[0]} <prev_json> <current_json>")
 
-    prev_json = sys.argv[1]
-    current_json = sys.argv[2]
+    # prev_json = sys.argv[1]
+    # current_json = sys.argv[2]
 
-    with open(prev_json) as fdsc:
+    with open(sys.argv[1]) as fdsc:
         prev = json.load(fdsc)
 
-    with open(current_json) as fdsc:
+    with open(sys.argv[2]) as fdsc:
         current = json.load(fdsc)
 
     log_model = current["log"]
@@ -51,7 +51,7 @@ def main():
     today = datetime.datetime.today()
     post_peak = False
 
-    def diff_key(key, prec=0, is_date=False):
+    def diff_key_log(key, prec=0, is_date=False):
         return diff_key_base(log_model, prev_log_model, key, prec, is_date)
 
     def diff_key_exp(key, prec=0, is_date=False):
@@ -71,20 +71,20 @@ def main():
             # We are in the post peak mode so we write the top of the curve and top date.
             post_peak = True
             print(f"- Görbe teteje: {fltfmt(log_model['top_of_curve'])}" +
-                  f" ({diff_key('top_of_curve')})")
+                  f" ({diff_key_log('top_of_curve')})")
             print(f"- Görbe vége ({fltfmt(log_model['growth_at_top'], 2)}/nap helye):" +
                   f" {log_model['top_of_curve_date']}" +
-                  f" ({diff_key('top_of_curve_date', 0, True)} nap)")
+                  f" ({diff_key_log('top_of_curve_date', 0, True)} nap)")
 
         # Pre-peak mode we don't write the top.
         print(
-            f"- Inflexiós pont: {log_model['peak']} ({diff_key('peak', 0, True)} nap)")
+            f"- Inflexiós pont: {log_model['peak']} ({diff_key_log('peak', 0, True)} nap)")
         print(f"- Max meredekség: {fltfmt(log_model['peak_growth'],2)}/nap" +
-              f" ({diff_key('peak_growth', 2)}/nap)")
+              f" ({diff_key_log('peak_growth', 2)}/nap)")
         print("- A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:" +
-              f" {fltfmt(log_model['tomorrow_diff'])} ({diff_key('tomorrow_diff')})")
+              f" {fltfmt(log_model['tomorrow_diff'])} ({diff_key_log('tomorrow_diff')})")
         print(f"- Görbe meredeksége: {fltfmt(log_model['tomorrow_growth'],2)}/nap" +
-              f" ({diff_key('tomorrow_growth', 2)}/nap)")
+              f" ({diff_key_log('tomorrow_growth', 2)}/nap)")
         print()
 
     if not post_peak and exp_model is not None:
