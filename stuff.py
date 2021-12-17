@@ -445,9 +445,10 @@ def get_weekly_moving_average(covid_data):
 
     weekly_data = [x for x in data if days_since_base - x[0] <= 7]
 
-    diff = weekly_data[-1][1] - weekly_data[0][1]
+    diff_y = weekly_data[-1][1] - weekly_data[0][1]
+    diff_x = weekly_data[-1][0] - weekly_data[0][0]
 
-    return diff / 7
+    return diff_y / diff_x
 
 
 def main():
