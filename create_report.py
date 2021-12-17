@@ -99,8 +99,8 @@ def main():
         print(f"- Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap" +
               f" ({diff_key_exp('tomorrow_growth', 2)}/nap)")
 
-    print(f"- Heti mozgóátlag: {current['weekly_moving_average']}" +
-          f" ({diff_key_root('weekly_moving_average')})")
+    print(f"Heti mozgóátlag: {fltfmt(current['weekly_moving_average'], 2)}/nap" +
+          f" ({diff_key_root('weekly_moving_average')}/nap)")
 
 
 if __name__ == "__main__":
