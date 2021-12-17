@@ -65,6 +65,7 @@ def get_gen_logistic_model():
         return height/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_floor
     return log_model
 
+
 def logistic_model(day, x_scale, peak, height, y_floor):
     "Logistic model formula"
     return height/pow(1+np.exp(-(day-peak)/x_scale), 1) + y_floor
@@ -207,6 +208,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         print("No generic logistic fit due to exception: {}".format(rte))
         return None
 
+
 def exponential_model(day, ln_daily_growth, x_shift, y_base):
     "Exponential model formula"
 
@@ -214,6 +216,7 @@ def exponential_model(day, ln_daily_growth, x_shift, y_base):
 
 
 DAILY_GROWTH_GUESS = np.log(1.1)
+
 
 def compute_exponential_initial_guess(x_data, y_data):
     "asdassda"
@@ -223,7 +226,8 @@ def compute_exponential_initial_guess(x_data, y_data):
 
     b_tmp = np.exp(DAILY_GROWTH_GUESS*(a_data[1]-a_data[0]))
     y_coord = (b_data[1]-b_tmp*b_data[0])/(1-b_tmp)
-    x_coord = np.log(np.exp(DAILY_GROWTH_GUESS*a_data[0])/(b_data[0]-y_coord))/DAILY_GROWTH_GUESS
+    x_coord = np.log(
+        np.exp(DAILY_GROWTH_GUESS*a_data[0])/(b_data[0]-y_coord))/DAILY_GROWTH_GUESS
 
     return [x_coord, y_coord]
 
@@ -401,32 +405,49 @@ def save_plot(curve_data, covid_data, texts):
     plt.savefig(file_name)
     print("Plot saved to {}".format(file_name))
 
-def save_json(covid_data, exp_result, log_result, texts):
+
+def save_json(covid_data, exp_result, log_result, texts, wma):
     "Creates JSON report of the curves"
 
     file_name = 'json-'+covid_data['last_date_str'] + \
         texts['plot_file_suffix']+'.json'
 
     json_dump = {'exp': {
-            'growth': exp_result['daily_growth']*100-100,
-            'duplication': np.log(2)/np.log(exp_result['daily_growth']),
-            'tomorrow_diff': exp_result['tomorrow_diff'],
-            'tomorrow_growth': exp_result['tomorrow_growth']
-        }, 'log': {
-            'name': log_result['name'],
-            'peak': log_result['peak_date'].strftime(
-                '%Y-%m-%d'),
-            'peak_growth': log_result['peak_growth'],
-            'tomorrow_diff': log_result['tomorrow_diff'],
-            'tomorrow_growth': log_result['tomorrow_growth'],
-            'top_of_curve': log_result['max_inf'],
-            'top_of_curve_date': log_result['final_date'].strftime(
-                '%Y-%m-%d'),
-            'growth_at_top': log_result['peak_growth'] * END_PEAK_GROWTH_RATE
-        } if log_result else None}
+        'growth': exp_result['daily_growth']*100-100,
+        'duplication': np.log(2)/np.log(exp_result['daily_growth']),
+        'tomorrow_diff': exp_result['tomorrow_diff'],
+        'tomorrow_growth': exp_result['tomorrow_growth']
+    }, 'log': {
+        'name': log_result['name'],
+        'peak': log_result['peak_date'].strftime(
+            '%Y-%m-%d'),
+        'peak_growth': log_result['peak_growth'],
+        'tomorrow_diff': log_result['tomorrow_diff'],
+        'tomorrow_growth': log_result['tomorrow_growth'],
+        'top_of_curve': log_result['max_inf'],
+        'top_of_curve_date': log_result['final_date'].strftime(
+            '%Y-%m-%d'),
+        'growth_at_top': log_result['peak_growth'] * END_PEAK_GROWTH_RATE,
+    } if log_result else None,
+        'weekly_moving_average': wma}
 
     with open(file_name, 'w') as file:
         json.dump(json_dump, file, indent="    ")
+
+
+def get_weekly_moving_average(covid_data):
+    "Gets the weekly moving average"
+
+    last_date = datetime.datetime.strptime(
+        covid_data['last_date_str'], '%Y-%m-%d')
+    days_since_base = (last_date - covid_data['base_date']).days
+    data = zip(covid_data['x_data'], covid_data['y_data'])
+
+    weekly_data = [x for x in data if days_since_base - x[0] <= 7]
+
+    diff = weekly_data[-1][1] - weekly_data[0][1]
+
+    return diff / 7
 
 
 def main():
@@ -459,6 +480,8 @@ def main():
 
     # x_data, y_data, base_date, last_date
     covid_data = parse_covid_data(texts['file_name'])
+
+    weekly_moving_average = get_weekly_moving_average(covid_data)
 
     sym_log_result = fit_logistic_model(
         covid_data['x_data'], covid_data['y_data'], covid_data['base_date'])
@@ -542,7 +565,7 @@ def main():
     print_curves(curve_data)
 
     save_plot(curve_data, covid_data, texts)
-    save_json(covid_data, exp_result, log_result, texts)
+    save_json(covid_data, exp_result, log_result, texts, weekly_moving_average)
 
 
 if __name__ == "__main__":
