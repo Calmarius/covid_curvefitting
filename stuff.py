@@ -417,7 +417,7 @@ def save_json(covid_data, exp_result, log_result, texts, wma):
         'duplication': np.log(2)/np.log(exp_result['daily_growth']),
         'tomorrow_diff': exp_result['tomorrow_diff'],
         'tomorrow_growth': exp_result['tomorrow_growth']
-    }, 'log': {
+    } if exp_result else None, 'log': {
         'name': log_result['name'],
         'peak': log_result['peak_date'].strftime(
             '%Y-%m-%d'),
