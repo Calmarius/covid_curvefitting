@@ -52,10 +52,16 @@ def main():
     post_peak = False
 
     def diff_key_log(key, prec=0, is_date=False):
-        return diff_key_base(log_model, prev_log_model, key, prec, is_date)
+        if prev_log_model is None:
+            return 'N/A'
+        else:
+            return diff_key_base(log_model, prev_log_model, key, prec, is_date)
 
     def diff_key_exp(key, prec=0, is_date=False):
-        return diff_key_base(exp_model, prev_exp_model, key, prec, is_date)
+        if prev_exp_model is None:
+            return 'N/A'
+        else:
+            return diff_key_base(exp_model, prev_exp_model, key, prec, is_date)
 
     def diff_key_root(key, prec=0, is_date=False):
         return diff_key_base(current, prev, key, prec, is_date)
@@ -98,6 +104,8 @@ def main():
               f" {fltfmt(exp_model['tomorrow_diff'])} ({diff_key_exp('tomorrow_diff')})")
         print(f"- Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap" +
               f" ({diff_key_exp('tomorrow_growth', 2)}/nap)")
+        print()
+            
 
     print(f"Heti mozgóátlag: {fltfmt(current['weekly_moving_average'], 2)}/nap" +
           f" ({diff_key_root('weekly_moving_average')}/nap)")
