@@ -60,7 +60,7 @@ def get_gen_logistic_model():
     def log_model(day, x_scale, peak, height, y_floor, ksi):
         "General logistic model formula"
 
-        if not math.isfinite(ksi):
+        if not math.isfinite(ksi) or ksi < 0:
             raise RuntimeError("ksi is invalid. Value = {}".format(ksi))
         return height/pow(1+ksi*np.exp(-(day-peak)/x_scale), 1/ksi) + y_floor
     return log_model
@@ -93,6 +93,11 @@ def fit_logistic_model(x_data, y_data, base_date):
             2, 60, 100000, y_data[0]], sigma=sigma)
         popt = result[0]
         pcov = result[1]
+        diag = np.diag(pcov)
+        if any(x < 0 for x in diag):
+            print("Pcov is invalid!")
+            return None
+
         errors = np.sqrt(np.diag(pcov))
         peak_date_error = errors[1]
         if popt[2] < 0:
