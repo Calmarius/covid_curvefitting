@@ -209,9 +209,9 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
         }
         res['final_date'] = find_end_of_logistic(res, base_date)
         return res
-    except RuntimeError as rte:
-        print("No generic logistic fit due to exception: {}".format(rte))
-        return None
+    except BaseException as be:
+        print("No generic logistic fit due to exception: {}".format(be))
+        return None        
 
 
 def exponential_model(day, ln_daily_growth, x_shift, y_base):
