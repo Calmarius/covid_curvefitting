@@ -93,18 +93,21 @@ def main():
               f" ({diff_key_log('tomorrow_growth', 2)}/nap)")
         print()
 
-    if not post_peak and exp_model is not None:
-        print("Exponenciális modell: ")
-        print("")
-        print(f"- Napi növekedés: {fltfmt(exp_model['growth'],2)}%" +
-              f" ({diff_key_exp('growth', 2)}%p)")
-        print(f"- Duplázódás: {fltfmt(exp_model['duplication'],2)} naponta" +
-              f" ({diff_key_exp('duplication', 2)})")
-        print("- A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:" +
-              f" {fltfmt(exp_model['tomorrow_diff'])} ({diff_key_exp('tomorrow_diff')})")
-        print(f"- Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap" +
-              f" ({diff_key_exp('tomorrow_growth', 2)}/nap)")
-        print()
+    if exp_model is None:
+        print("Exponenciális modell nem illeszkedik az adatokra")
+    else:
+        if not post_peak:
+            print("Exponenciális modell: ")
+            print("")
+            print(f"- Napi növekedés: {fltfmt(exp_model['growth'],2)}%" +
+                  f" ({diff_key_exp('growth', 2)}%p)")
+            print(f"- Duplázódás: {fltfmt(exp_model['duplication'],2)} naponta" +
+                  f" ({diff_key_exp('duplication', 2)})")
+            print("- A javuláshoz holnap ennyinél kellene kevesebbet jelenteniük:" +
+                  f" {fltfmt(exp_model['tomorrow_diff'])} ({diff_key_exp('tomorrow_diff')})")
+            print(f"- Görbe meredeksége: {fltfmt(exp_model['tomorrow_growth'],2)}/nap" +
+                  f" ({diff_key_exp('tomorrow_growth', 2)}/nap)")
+            print()
             
 
     print(f"Heti mozgóátlag: {fltfmt(current['weekly_moving_average'], 2)}/nap" +
