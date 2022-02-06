@@ -90,7 +90,7 @@ def fit_logistic_model(x_data, y_data, base_date):
         # sigma[-1] = 0.1
         model = logistic_model
         result = curve_fit(model, x_data, y_data, p0=[
-            2, 60, 100000, y_data[0]], sigma=sigma)
+            2, x_data[-1], y_data[-1] - y_data[0], y_data[0]], sigma=sigma)
         popt = result[0]
         pcov = result[1]
         diag = np.diag(pcov)
@@ -154,7 +154,7 @@ def fit_gen_logistic_model(x_data, y_data, base_date):
     try:
         model = get_gen_logistic_model()
         result = curve_fit(logistic_model, x_data, y_data, p0=[
-            2, 60, 100000, y_data[0]])
+            2, x_data[-1], y_data[-1] - y_data[0], y_data[0]])
         popt_s = result[0]
 
         result = curve_fit(model, x_data, y_data,
