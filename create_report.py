@@ -93,10 +93,10 @@ def main():
               f" ({diff_key_log('tomorrow_growth', 2)}/nap)")
         print()
 
-    if exp_model is None:
-        print("Exponenciális modell nem illeszkedik az adatokra")
-    else:
-        if not post_peak:
+    if not post_peak:
+        if exp_model is None:
+            print("Exponenciális modell nem illeszkedik az adatokra")
+        else:
             print("Exponenciális modell: ")
             print("")
             print(f"- Napi növekedés: {fltfmt(exp_model['growth'],2)}%" +
